@@ -2,317 +2,282 @@
 
 **Feature folder**: specs/[NNN-feature]/
 **Status**: PENDING QC LEAD APPROVAL
-**Author / date / version**: [QC / date / version]
-**Policy**: .specify/memory/constitution.md — Quality Control
-**Review**: qc-review.md
+**Author / date / version**: [test designer / YYYY-MM-DD / 1]
+**Policy**: .specify/memory/constitution.md — Quality Control (QC-0 … QC-18)
+**Development plan**: plan.md (written in the same /speckit.plan run)
+**Test cases**: [N] high-level ([S] smoke · [A] automation candidates · [M] manual-only)
+**Open questions**: [o] open · [d] decided by agent · [a] answered
 
-Keep sections 1–9; scale detail to risk. Replace guidance/examples with project decisions.
-Use the project-profiles reference for applicability, not as a second policy source.
-Before TC design, map source IDs and leave TC references pending; reconcile before final approval.
+<!-- Written by /speckit.plan beside plan.md. This is the single QC review point (QC-3): the QC
+     Lead approves scope, risk, the high-level test-case table (§4), the automation approach (§8),
+     the test-data needs (§6) and every open question (§11) in one sitting. /speckit.tasks then
+     expands §4 into TEST-CASES-[feature].md and TEST-DATA-[feature].md without a second review.
+     Keep every section; scale detail to risk — a small fix uses concise rows, never manufactured
+     work. Replace guidance text with decisions. Sections after "Approval Record" are filled during
+     /speckit.implement and never change the approved design. -->
 
 ## 1. Scope, profile and responsibilities
 
 - Change mode: [new / enhancement / bugfix / migration / configuration / legacy adoption / maintenance]
-- Surfaces: [browser / API/events / native / data / library-CLI / infrastructure / AI-ML / content / other]
-- In scope: [stories, interfaces, acceptance outcomes and affected components]
-- Out of scope: [reason, risk and approval; do not silently exclude an in-scope AC]
-- Existing behavior / regression impact: [changed dependencies, consumers and shared flows]
-- Release unit / implementation state: [service build, package, dataset/job, device app, model, document etc.]
-- Assumptions / unresolved decisions: [evidence, owner and confirmation point]
+- Surfaces (QC-2): [browser / API-events / native / data / library-CLI / infrastructure / AI-ML / content]
+- In scope: [stories, interfaces, acceptance outcomes, affected components]
+- Out of scope: [reason, risk, approval; never silently exclude an in-scope acceptance criterion]
+- Existing behaviour / regression impact: [changed dependencies, consumers, shared flows]
+- Release unit / implementation state: [service build, package, dataset / job, device app, document]
+- Local run: [how the implementation will be hosted locally for validation — command, port, seed]
+- Assumptions: [evidence and confirmation point]
 
-| Responsibility | Named owner / backup | Deliverable / decision | Needed by |
+| Responsibility (QC-0) | Named owner / backup | Deliverable / decision | Needed by |
 |---|---|---|---|
-| Test design / execution | | | |
+| Test design / expansion | | | |
 | Automation / suite maintenance | | | |
 | Data / environment / external dependency | | | |
 | Defect triage / fixes / retest | | | |
 | QC approval / release acceptance | | | |
 
-Milestones and effort: [design, dev dependency delivery, environment access, execution and retest].
-Constraints: [people/device access, CI runtime, data/secret access, time/budget; tradeoffs agreed].
+Milestones and effort: [design, dev dependency delivery, local build ready, validation, automation, retest].
 
-## 2. Risk, policy configuration and applicable checks
+## 2. Risk and applicable checks
 
-Reference approved constitution values. Missing applicable values are Pending with owner/due phase,
-then BLOCKED when needed; irrelevant categories are N/A with justification.
-Development readiness does not require an already deployed application.
+Reference constitution configuration values. A missing applicable value is an open question
+(§11); an irrelevant category is N/A with justification; a missing tool is BLOCKED, not N/A.
 
-| Risk / affected outcome | Likelihood / impact → priority | Test response / depth | Owner | Residual risk / decision |
+| User story / risk | Risk (High / Medium / Low, QC-5) and why | Test response / depth | Owner | Residual risk |
 |---|---|---|---|---|
 
-| Test category | Required / N/A / Pending + reason | Observable acceptance / metric and source | Level / method / owner |
+| Test category (QC-12) | Required / N/A + reason | Observable acceptance / metric and source | Level / method / owner |
 |---|---|---|---|
 | Functional / contracts / compatibility | | | |
 | Negative / boundary / state / integrity | | | |
 | Roles / tenant isolation / security / privacy | | | |
 | Reliability / recovery / concurrency / idempotency | | | |
-| Performance / capacity / resources | | [metric, percentile, load/volume and limit] | |
-| Platform / install / upgrade / runtime variants | | | |
+| Performance / capacity | | [metric, percentile, load, limit] | |
+| Platform / install / upgrade variants | | | |
 | Usability / accessibility / locale | | [platform-appropriate target] | |
-| Browser responsive / cross-browser / visual | | [browser scope only] | |
-| Data reconciliation / lineage / rerun | | [data/migration scope] | |
-| Model/evaluation quality / variance | | [AI scope; approved dataset/threshold/sample] | |
+| Browser responsive / cross-browser / visual (UI audit) | | [browser scope only] | |
+| Data reconciliation / lineage / rerun | | [data / migration scope] | |
+| Model / evaluation quality / variance | | [AI scope] | |
 | Observability / logging / diagnostics | | | |
-| Smoke / delivery check / regression | | [specific selection and rationale] | |
+| Smoke / regression | | [selection and rationale] | |
 
-Add domain-specific checks where needed. An unavailable tool is not evidence a check is irrelevant.
-Select impacted regression now and broader release regression as required by policy; record
-omissions with risk/owner. Do not duplicate an existing dev-owned suite solely for QC ownership.
+## 3. Requirement traceability matrix (QC-4)
 
-## 3. Requirement Traceability Matrix
+One row per FR / SC / acceptance scenario / edge case, plus `Policy:` rows for required checks.
 
-One row per source FR/SC/AC/edge case, plus explicit Policy: references for quality checks.
-A cross-cutting case/check may cover multiple rows; count unique requirements, not duplicate links.
+| Source ID | Expected outcome / check | Testable? | Risk / priority | Level / owner | Target / method | TC IDs |
+|---|---|---|---|---|---|---|
+| [FR-001 / US1-AC1] | | [Yes / Partially → Q-n] | | | [target; automated / manual / mixed] | [TC-…] |
 
-| Source ID | REQ IDs | Expected outcome / check | Testable? / question | Risk / priority | Level / accountable owner | Target / method | Automation candidate | Smoke? | Case/check IDs |
-|---|---|---|---|---|---|---|---|---|---|
-| [FR/AC/etc.] | | | [Yes/Partially/No] | | | [target; automated/manual/mixed] | YES/NO | YES/NO | [story:TC or shared check] |
+Missing expected behaviour is an open question routed to /speckit.clarify; it is never invented.
 
-For each requirement, identify the full oracle, not merely a link. Designed steps may use a
-browser, API request, CLI, job/harness, device or human review. Link valid lower-level evidence.
-Missing expected behavior goes to clarify. No percentage from placeholders or non-existent tests.
+## 4. High-level test cases (QC-6)
 
-## 4. Coverage, regression and measurement
+One row per planned test case. This table is what the reviewer approves; /speckit.tasks expands
+each row into the full case without changing ID, type, stage, smoke, candidacy or scope.
+Minimums: one happy path per acceptance scenario, one edge case per user-facing input, one
+negative case per guarded action; the five negative categories covered or N/A with reason;
+one variant per required locale (ID suffix `b`); smoke ≈ 10–20 % and at least one per screen.
 
-| Measure | Numerator / denominator / exclusions | Target / enforcement | Evidence |
+| TC-ID | Title | Source IDs | Type | Priority | Stage / smoke | Method / target | Automation candidate | Data refs |
+|---|---|---|---|---|---|---|---|---|
+| [TC-LOGIN-001] | [User signs in with valid credentials] | [US1-AC1, FR-001] | happy-path | P1 | @positive / smoke | [web / link-playwright] | YES | [A1, E1] |
+
+Negative coverage: invalid input [TC-IDs] · boundary [TC-IDs] · missing required [TC-IDs] ·
+unauthorised [TC-IDs] · error recovery [TC-IDs or N/A + reason].
+Techniques applied: [EP / BVA (boundaries from the spec) / decision table / state transition].
+Error guessing (E1–E6) as cases: [IDs] · as questions: [Q-n] · not applicable: [reason].
+Interaction patterns applied / skipped: [P1 reveal, P2 async wait, P3 explicit trigger, P4 navigation state, P5 page-load; reasons].
+Out-of-band outcomes: [channel → interface [E{n}] or [HUMAN] step; TC-IDs].
+Manual-only scenarios: [TC-IDs, category and why they cannot be automated].
+
+## 5. Coverage and regression (QC-11)
+
+| Measure | Numerator / denominator / exclusions | Target | Evidence |
 |---|---|---|---|
-| Requirement design | Fully designed applicable ACs / all applicable in-scope ACs; partial separately | [policy] | Approved case mapping |
-| Code line / branch | Covered executable lines / executable lines; covered branches / branches, per applicable layer; baseline/exclusions explicit | [constitution layer floors/mode] | Native coverage |
-| Automation implementation | Fully/partly/not automated eligible cases; also show all-case manual remainder | [selected runner metric; never mix with execution] | Code/static inventory |
-| Execution | PASS / FAIL / BLOCKED / NOT RUN / N/A for original planned cases and required variants | All mandatory scope passes at release | Native + local summary |
-| Browser app validation | Observed/inferred/draft by 3c; optional for browser surface | Progress only, not release pass rate | CLI report |
+| Requirement design | (fully + 0.5 × partially covered ACs) / in-scope ACs | [policy] | §3–§4 mapping |
+| Code line / branch | per applicable layer; baseline and exclusions explicit | [constitution floors] | native coverage |
+| Automation | (fully + 0.5 × partially automated TCs) / all TCs | [constitution: 80 %, soft block] | skill 5 coverage CSVs |
+| Execution | PASS / FAIL / BLOCKED / NOT RUN / N/A per TC and required variant | all mandatory scope passes | §Execution results |
 
-Use the installed Link skill's own weighted static formula when that route is selected; record
-its denominator explicitly. Other metrics may coexist but are not interchangeable.
-Zero eligible cases means N/A with reason, not 100%. Retry success retains earlier failure evidence.
+Regression selection: [suites / TC IDs, change-impact rationale, CI stage, owner].
+Baseline debt / flaky checks: [issue, owner, expiry]. Zero eligible cases is N/A with reason.
 
-Regression selection: [suites/check IDs, change-impact rationale, CI stage, owner, estimated duration].
-Baseline debt / flaky checks: [known issue, risk, owner, expiry and replacement evidence].
-Quarantine cannot make a mandatory requirement pass; release criteria still apply.
+## 6. Environments, prerequisites and test data (QC-7, QC-12)
 
-## 5. Environments, prerequisites and readiness
-
-Environment names are project-defined. A URL is only one possible target.
-
-| Environment ID / purpose | Target / artifact / config identity | Access and health prerequisites | Data/integration parity | Owner / availability |
+| Environment ID / purpose | Target / build identity | Access and health prerequisites | Data / integration parity | Owner |
 |---|---|---|---|---|
-| [e.g. ci, device-lab, integration, staging] | [env refs; package/runtime/job/device etc.] | | | |
+| local | [developer build; command / URL via E1] | | | |
+| [ci / integration / staging …] | | | | |
 
-Map TEST-DATA [E]/[A]/[D] references when those artifacts exist; no credentials here.
-Actual readiness: [build/dependency health, configuration, accounts, required data, permissions,
-cleanup path and evidence storage]. Unknowns block dependent runs, not completed independent work.
-Load/security/mutating scope and authorization: [target, owner, boundaries].
-Evidence reuse between phases: [same scope/build/config/data? verification and reason].
+Accounts, URLs and data appear only as `[A{n}]` / `[E{n}]` / `[D{n}]` references, expanded in
+TEST-DATA-[feature].md; secrets by name only.
 
-## 6. Variants and human execution
+| Data ref | Plain-English item and required state | Used by TC IDs | Known status | Planned way to prepare | Isolation / cleanup |
+|---|---|---|---|---|---|
+| E1 | application base URL (local, then configured environments) | all | UNKNOWN | — | — |
+| A1 | [role] account | | UNKNOWN | secret names A1_USER / A1_PASSWORD | — |
+| D1 | [e.g. an approved order with 12 line items] | | UNKNOWN | [e2e scenario / api (to be confirmed) / manual] | [unique ownership; delete after evidence] |
 
-| Target / platform / runtime | Required role / locale / data / device variants | Selection rationale | Case IDs / manual remainder |
-|---|---|---|---|
+Load / security / mutating scope and authorisation: [target, owner, boundaries].
 
-Use only applicable dimensions. Bound a large matrix with risk-based selection and explicit
-approval; do not imply every combination was run. Manual scope includes Automation Candidate NO,
-partial automation, HUMAN steps and operator/subjective checks. Name tester/access/time/evidence.
-Unsupported browser validation never eliminates native or backend-only coverage.
+## 7. Variants and human execution (QC-13)
 
-## 7. Automation implementation plan
+| Target / platform / runtime | Required role / locale / data / device variants | Selection rationale | TC IDs / manual remainder | Tester |
+|---|---|---|---|---|
 
-This is the technical HOW; approved requirements/cases remain the oracle.
-Choose feasible routes per feature, reuse existing assets and label unbuilt interfaces Proposed.
-For manual-only scope, record rationale and execution handoff; unused code layers are N/A.
-Do not create code, provision data or execute the application while writing this plan.
+Manual scope includes Automation Candidate NO, `[HUMAN]` steps and subjective checks.
 
-### 7.1 Feature assessment and approach
+## 8. Automation approach (QC-9)
 
-Feature behavior: [roles, state transitions, channels, data volumes, integrations and risks].
-Existing tools/capabilities: [inspected files/config/version and access; not assumed].
-Alternatives: [UI/API/native/job/CLI/evaluation/manual choices, cost/reliability and rationale].
+The technical HOW; approved requirements and §4 remain the oracle. Unbuilt interfaces are
+labelled Proposed. Manual-only scope records the rationale; unused layers are N/A. No code is
+written and no tool is run while planning.
 
-| Target ID / surface / behavior → source or TC IDs | Mode | Runner/config / capability evidence | Why selected / alternative rejected | Outcome oracle / human remainder |
+### 8.1 Approach per target
+
+| Target ID / surface / behaviour → TC IDs | Mode | Runner / config / capability evidence | Why selected / alternative rejected | Oracle / human remainder |
 |---|---|---|---|---|
 | [target] | link-playwright / project-runner / manual-only / unresolved | | | |
 
-Link Playwright is conditional on supported scope; CLI validator 3c is browser-only.
-For native/data/library/other targets, use the selected existing runner and its own results.
-Hybrid features need end-to-end cross-surface evidence, correlation and one accountable owner.
-Unresolved tool/interface decisions: [owner, due phase, affected checks and independent work].
+### 8.2 Structure, reuse and responsibilities
 
-### 7.2 Structure, reuse and responsibilities
-
-For each target, specify actual automation root, config, package/runtime, verified command and
-working directory. Prefer the existing repository structure. One shared config per compatible
-runner is appropriate; different platforms may need separate configs. Never overwrite one
-target's setup just to force the other into the same framework.
-For a new project with no runner, propose tooling/config/dependencies with owner, rationale and
-confirmation point. Assign setup work in 7.6 or section 8; label commands Proposed until verified
-against actual configuration. Tool delivery is required before execution, not before development.
-
-| Target / concrete file or layer | Reuse / extend / create / N/A | Existing candidate / decision evidence | Responsibility / planned interface | Cases / owner |
+| Target / file or layer | Reuse / extend / create / N/A | Existing candidate / evidence | Responsibility / planned interface | TCs / owner |
 |---|---|---|---|---|
-| [config and result adapter] | | | | |
-| [UI page/component OR API/CLI/job/native driver] | | | | |
-| [prerequisite/setup functions] | | | | |
-| [lifecycle fixture / cleanup] | | | | |
+| [shared config and result adapter] | | | | |
+| [page object / API / CLI / job / native driver] | | | | |
+| [prerequisite / setup functions] | | | | |
 | [data builders / constants / expected datasets] | | | | |
-| [test/evaluation files and shared evidence helpers] | | | | |
+| [test files and shared evidence helpers] | | | | |
 
-For Link browser automation only, follow its actual shared config/POM structure:
+Browser automation uses the shared layout under `Testing/Automation/` (one `playwright.config.ts`,
+`pages/`, `prerequest/`, `tests/<Area>_Tests/`, `helpers/`, `reports/`, `screenshots/`,
+`automation-logs/`). Other runners use their native architecture. Commands are Proposed until
+verified in the repository.
 
-```text
-<automation root>/
-  playwright.config.ts
-  pages/                    screen actions/assertions; components/ for shared widgets
-  prerequest/               API setup/lookup/cleanup functions; no UI provisioning
-  fixtures/                 lifecycle wrappers only when needed
-  tests/<area>/             approved TC journeys and step orchestration
-  helpers/                  shared steps, evidence, unique data and readiness
-  reports/ screenshots/ automation-logs/
-```
+### 8.3 Prerequisites
 
-Search the complete automation root before creating another screen/client/helper.
-For Link, locators/UI assertion methods stay in page objects; specs orchestrate steps.
-Other runners use their native architecture; do not invent POMs or screenshots for non-UI tests.
-Record chosen optional layers in manifest target metadata and relevant runner configuration.
-
-### 7.3 Prerequisite / pre-request design
-
-Required starting states include relevant services, permissions, flags, parent records, accounts,
-files/jobs/devices and workflow state. State dependency order explicitly; tests cannot rely on
-another test having passed.
-
-| PRE-ID / affected cases | Depends on | Required state | Supported setup method / planned function | Scope / owner | Observable readiness / timeout | Failure action |
+| PRE-ID / affected TCs | Depends on | Required state | Setup method / planned function | Scope / owner | Readiness / timeout | Failure action |
 |---|---|---|---|---|---|---|
-| [PRE-01] | | | [API/UI/fixture/seed/job/device etc.] | [test/worker/run] | | |
+| [PRE-01] | | | [API / UI / fixture / seed / job] | | | |
 
-For each provisioning function, document input/output IDs, access, idempotency, reconciliation
-after uncertain mutation, retry bounds, cleanup ownership and error classification.
-Use the actual supported interface; DB/direct seed needs approval and must preserve valid state.
-Never provision away the behavior under test. UI setup uses page objects, API setup uses
-prerequest functions; other stacks use equivalent existing setup helpers.
-Immutable expensive setup may be shared; mutable records need isolation or justified serial use.
-Failed setup blocks affected cases and does not automatically prove a product bug.
+Never provision away the behaviour under test; failed setup blocks the affected TCs and is not a
+product bug by itself.
 
-### 7.4 Test data lifecycle
+### 8.4 Execution, assertions and reliability
 
-Map plain-English TEST-DATA references to technical data builders/sources here.
-Before case design use descriptive planned references; reconcile to actual tokens afterward.
-
-| Data reference / cases | Values / bounds / required state / version | Reuse or generate / source | Provisioning / PRE-ID | Isolation / lifetime | Readiness by environment | Cleanup / recovery |
-|---|---|---|---|---|---|---|
-| [D-ref / planned data] | | | | | | |
-
-Cover meaningful valid/invalid/boundary/locale variations; deterministic inputs for expected
-results and unique run/worker/retry/variant ownership for created records. Protect tenant/role
-and session boundaries. Track exact created IDs, not a broad deletion query or another team's data.
-Cleanup only owned data after evidence, in reverse dependency order; preserve immutable seeds.
-Plan cleanup on failure/timeout/retry and a scoped recovery owner for leftovers.
-Use synthetic/anonymized datasets; state retention/redaction needs. Secrets remain external.
-Recheck environment-specific availability; keep created data and application state out of test oracles.
-For migrations/data/model work, record source/target/reference dataset versions and reconciliation.
-
-### 7.5 Execution, assertions and reliability
-
-| Target / case group | Stage / smoke | Parallel / serial / controlled concurrency | Required variants / data isolation | Oracle / observable assertion | Bounded wait / evidence / cleanup point |
+| Target / TC group | Stage / smoke | Parallel / serial (Data effect, Shared data) | Variants / isolation | Oracle / assertion | Wait bound / evidence / cleanup |
 |---|---|---|---|---|---|
-| | | | | [approved source] | |
 
-Link uses its Stage/Smoke fields and smoke → positive → negative gate. Other runners use their
-verified native ordering and equivalent early readiness checks; do not invent unsupported tags.
-State worker/retry/time budgets, polling condition, diagnostic output and stop/resume rules.
-A concurrency requirement needs controlled multi-actor interleaving, not accidental worker overlap.
-Retries expose every attempt; quarantine has owner/expiry/impact and cannot hide a mandatory failure.
+Order: setup → smoke → smoke gate (30 %) → positive → negative. Retries expose every attempt; a
+zero-test, partial or skipped run is not PASS; evidence is captured at the assertion point.
 
-Define appropriate evidence: screenshots for UI, payload/trace for services, exit/output for CLI,
-reconciliation/job logs for data, device evidence for native, evaluation records for models.
-Expected results come from approved rules/reference fixtures, not the same implementation formula.
-For nondeterministic outputs define sample size, seed/repeats where useful, tolerance/statistical
-acceptance and error budget before seeing results. Correlate external/async outcomes with a
-per-run identifier. If no authorized observation exists, retain manual/BLOCKED scope.
-A zero-test, partial or skipped run is not PASS; failures distinguish product/tool/data/environment.
+### 8.5 Work order
 
-### 7.6 Work order, ownership and maintenance
-
-| Order / concrete files or change | Depends on | Owner / effort | Completion evidence / decision |
+| Order / files or change | Depends on | Owner / effort | Completion evidence |
 |---|---|---|---|
-| [confirm provisional interfaces/tooling and inventory] | | | |
-| [data/setup/lifecycle with cleanup verification] | | | |
-| [reused/extended drivers and one representative critical check] | | | |
-| [remaining approved cases and regression integration] | | | |
-| [code/readiness review, scoped runs, results review and handoff] | | | |
+| [confirm interfaces / tooling; automation inventory] | | | |
+| [data / setup with cleanup] | | | |
+| [one representative critical TC end to end] | | | |
+| [remaining TCs, regression integration, Checkpoint A/B, handoff] | | | |
 
-Tailor rows to actual work. Dev dependencies go into section 8 and plan.md/tasks.md; QC-owned
-acceptance automation stays in this worklist. Name code reviewers, suite/flake triage owner and
-maintenance trigger (contract/UI/runtime/data change). Record actual placement and routine
-deviations in execution history; material scope/approach/data-access changes require reapproval.
+## 9. Development dependencies (copied into plan.md "QC Requirements for Development" and tasks.md)
 
-## 8. Development dependencies and delivery
-
-| Requirement / need | Concrete requested change | Owner | Task reference / due phase | Ready when |
+| Need | Concrete requested change | Owner | tasks.md reference / due phase | Ready when |
 |---|---|---|---|---|
-| [lower-level tests, observable IDs/interfaces, isolated seed, account roles, diagnostics etc.] | | | | |
+| [lower-level tests, stable test IDs, observable interfaces, isolated seed / cleanup hooks, roles, diagnostics, local run script] | | | | |
 
-Use only relevant asks; stable browser test IDs are not a blanket requirement for APIs/native.
-Reuse valid developer-owned E2E or contract suites; assign one accountable owner per scope.
-Plan risks/dependencies with real owners and escalation before promised execution dates.
+## 10. Gates, defects and exceptions (QC-14 … QC-16)
 
-## 9. Gates, defects and exceptions
+- **Development entry**: this plan APPROVED, no Open question, every in-scope source ID mapped to
+  TC IDs, §9 asks in tasks.md. No live app or finished automation required.
+- **Validation / automation entry** (during /speckit.implement): implementation complete and
+  running locally, approved TEST-CASES / TEST-DATA present, data and access ready, cleanup and
+  evidence paths known.
+- **Push / release exit**: validator findings and automation failures fixed and re-run; in-scope
+  ACs pass on required variants; constitution floors met; manual remainder done; named owner records
+  GO / NO-GO in the Release decision section below.
 
-- **Development entry**: reviewed testable outcomes, approved plan/case designs, source traceability
-  and planned dependencies. No live app, final credentials or finished automation required.
-- **Execution entry**: relevant implemented build/artifact, approved scope, runnable selected
-  route or named manual tester, current config/data/access and cleanup/evidence readiness.
-- **Suspend/resume**: [health/data/security failure threshold, scope paused, owner and recheck].
-- **Release exit**: current in-scope ACs and required regression/checks pass on required variants;
-  constitution defect/security/accessibility/metric floors met; manual remainder completed.
-  Named QC/release owner approves GO. A partial/nonexecuted mandatory scope means NO-GO.
+Defect workflow: [triage owner / cadence, severity vs priority, fix / retest owner, evidence, closure].
 
-Defect workflow: [triage owner/cadence, severity vs priority, fix/retest owner, evidence and closure].
-N/A needs applicability evidence. Pending decisions name owner/due phase. Allowed deferrals
-retain severity, justification, risk, approver, owner and remediation date; they cannot change
-the release floor or replace an undefined oracle. Actual scope changes go through clarify/spec.
-
-| Exception / risk / deferred defect | Scope / reason / policy permission | Owner | Approver/date | Expiry / remediation / retest |
+| Exception / deferred risk | Scope / reason / policy permission | Owner | Approver / date | Expiry / remediation |
 |---|---|---|---|---|
+
+## 11. Open questions (QC-3)
+
+Every question about test cases, automation and test data lives here. One specific, answerable
+question per row naming what it affects. Decide from evidence where possible (**Decided by
+agent**, cite it); otherwise 2–3 options with one **(Recommended)** and a one-line reason, asked
+in one batch. Business-rule gaps go to /speckit.clarify. No row may stay **Open** when
+/speckit.tasks starts; answers update §3–§8 before approval.
+
+### 11.1 Test cases
+
+| ID | Question | Affects | Options | Recommended — reason | Status | Answer / evidence |
+|---|---|---|---|---|---|---|
+| Q-1 | [After 3 failed sign-ins, is the account locked or only delayed?] | [TC-LOGIN-004] | A: lock 15 min · B: captcha · C: no limit | A — matches FR-007 "temporarily blocked" | Open / Decided by agent / Answered | |
+
+### 11.2 Automation
+
+| ID | Question | Affects | Options | Recommended — reason | Status | Answer / evidence |
+|---|---|---|---|---|---|---|
+
+### 11.3 Test data
+
+| ID | Question | Affects | Options | Recommended — reason | Status | Answer / evidence |
+|---|---|---|---|---|---|---|
 
 ## Approval Record
 
-Approved design hash = SHA-256 of exact UTF-8 bytes from file start to (excluding) the line
-`## Approval Record`, after human approval changes Status to APPROVED. Records/logs below it
-are excluded. A machine may record the human decision but may not invent it or update a stale
-fingerprint as approval. Retain earlier approvals as history.
+Approved design hash = SHA-256 of this file's exact UTF-8 bytes from the start up to (excluding)
+the line `## Approval Record`, computed after the QC Lead sets Status to APPROVED. A machine may
+record the human decision but never invent it or refresh a stale hash as approval. Earlier
+approvals stay as history.
 
-- Approved by/date/scope: [PENDING]
-- Design hash and source spec / constitution / plan.md hashes: [PENDING]
-- Manifest routing/config snapshot and requirement-dependency/derived-REQ paths/hashes: [PENDING]
+- Approved by / date / scope: [PENDING]
+- Design hash: [PENDING]
+- Source hashes (spec.md, constitution, plan.md): [PENDING]
+- Expanded design (freshness only, no separate approval): TEST-CASES-[feature].md [sha256] · TEST-DATA-[feature].md [sha256] · expanded on [date] by /speckit.tasks
 
-| Story / shared scope | TC/check design path and SHA-256 | TEST-DATA design path and SHA-256 (or N/A reason) | Human approver/date |
-|---|---|---|---|
-| | | | |
+<!-- Everything below is filled during /speckit.implement. It records results and never changes
+     the approved design above. -->
 
-## Implementation Verification
+## Implementation verification
 
-[Current source-ID to implementation evidence, incomplete scope/tasks, build/artifact identity.]
+| Source ID | Implemented | Evidence (build, screen / endpoint seen, test) |
+|---|---|---|
 
-## CLI Validation
+## Live validation (QC-8)
 
-[Browser tool applicability; tool cli, observed/inferred/draft and unobserved scope/evidence.
-No browser: N/A for this tool, with native/manual execution still planned. Not release sign-off.]
+- Tool / run: [playwright-cli version · date · environment (local first) · build]
+- Result: [v] validated / [e] enhanced / [i] inferred / [d] discrepancy / [n] not-implemented / [r] draft — progress [o]/[N]
+- Design-field diff: [empty — Status kept APPROVED | changed → validation defect]
+- Potential bugs: [PB-n → BUG-n / fixed in commit …]
+- Needs a human run: [TC-IDs with [HUMAN] steps]
+- Updated files: TEST-CASES-[feature].md · TEST-DATA-[feature].md · TC-REVIEW-[feature].html
 
-## Automation Review
+## Automation runs (QC-9)
 
-[Per target: runner/version, scope, code/config hashes, pre-run/post-run review, actual checks,
-findings and reviewer/approval. Link A/B only for Link targets; manual-only automation N/A.]
-
-## Execution Log
-
-| Run / date / target | Environment + build/config/data identity | Scope / variants / attempts | PASS / FAIL / BLOCKED / NOT RUN / N/A counts | Reports / diagnostics / cleanup | Tester |
+| Phase / date | Environment + build | Scope / variants | Passed · Failed · Incomplete · Skipped · Not run · Partial | Compliance A / B | Run report / bug report |
 |---|---|---|---|---|---|
 
-## Checklist Results
+Coverage (automation, weighted): [x % — target y %, mechanism]. Fix loop: [bugs fixed → re-run phase].
 
-| Case/check/variant | Target / environment / artifact | Result | Evidence / N/A reason | Defect / retest / remaining work | Tester/date |
+## Manual execution results
+
+| TC-ID / check | Variant | Result (PASS / FAIL / BLOCKED / NOT RUN / N/A) | Env / build / date | Tester | Evidence / bug |
 |---|---|---|---|---|---|
 
-## Release Decision
+## Release decision (QC-15)
 
-[Link qc-signoff.md: consolidated per-criterion GO/NO-GO, current scope/evidence identity,
-coverage denominators, regression/manual remainder, residual risks and actual human decision.]
+| Criterion | Required | Actual | Evidence | Met? |
+|---|---|---|---|---|
+| In-scope acceptance criteria pass on required variants | all | | | |
+| Regression selection passes | all | | | |
+| Open Severity 1–2 / P1–P2 defects | 0 | | | |
+| Security findings Critical / High | 0 | | | |
+| Accessibility Critical / Serious violations | 0 (where applicable) | | | |
+| Every configured language passes (RTL where applicable) | all | | | |
+| Manual remainder executed | all | | | |
+| Traceability complete | every source ID → executed TCs | | | |
+
+**Decision:** [GO / NO-GO / PENDING] · **Recorded by:** [QC Lead + release owner / date]

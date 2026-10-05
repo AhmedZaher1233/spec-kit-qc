@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "generatedBy": "speckit.qc.setup",
+  "generatedBy": "speckit.constitution (qc preset)",
   "generatedOn": "[YYYY-MM-DD]",
   "projectName": "[project name]",
   "paths": {
     "testingRoot": "Testing",
-    "requirements": "Testing/Requirements",
-    "manualTestCases": "Testing/Manual_Test/TestCases",
+    "requirements": "specs",
+    "manualTestCases": "specs",
     "automationRoot": "Testing/Automation",
     "pages": "Testing/Automation/pages",
     "tests": "Testing/Automation/tests",
@@ -24,10 +24,10 @@
     "L3": ".specify/memory/constitution.md"
   },
   "framework": {
-    "runner": "[resolve selected primary runner]",
-    "configFile": "[resolve existing config or N/A]",
-    "browserProject": "[only for browser scope]",
-    "language": "[resolve selected runtime]"
+    "runner": "[playwright | the repository's verified runner | manual-only]",
+    "configFile": "[Testing/Automation/playwright.config.ts | existing config | N/A]",
+    "browserProject": "[chromium | N/A]",
+    "language": "[typescript | the repository's language]"
   },
   "mcp": {
     "configFile": ".mcp.json",
@@ -36,22 +36,25 @@
   "deviations": [
     {
       "area": "quality-policy",
-      "decision": "The constitution QC article replaces standalone policy documents; legacy steering keys are compatibility aliases.",
+      "decision": "The constitution's Quality Control article is the only QC policy and configuration source; the legacy steering keys are compatibility aliases that all resolve to it.",
       "source": ".specify/memory/constitution.md"
     },
     {
+      "area": "artifact-locations",
+      "decision": "Requirements are spec.md and test cases live beside it: specs/<NNN-feature>/TEST-CASES-<NNN-feature>.md and TEST-DATA-<NNN-feature>.md. There is no Testing/Requirements or Testing/Manual_Test tree; pass explicit document paths to the skills.",
+      "source": "qc preset"
+    },
+    {
       "area": "reporting",
-      "decision": "Local reports only. Pass ado_mode: local to every automation invocation; skip external publishing and synchronization."
+      "decision": "Local reports only. Every automation invocation passes ado_mode: local; no external publishing or synchronization."
     },
     {
       "area": "live-tc-validation",
-      "decision": "CLI skill 3c is selected only for browser validation; non-browser targets use approved runner/manual checks."
+      "decision": "Browser test cases are validated live with link-qc-3c-validate-manual-test-cases-cli (playwright-cli); there is no MCP fallback. Non-browser scope uses the planned runner or a named tester."
     }
   ],
   "qc": {
-    "projectTypes": [],
-    "changeMode": "unresolved",
-    "browserValidation": "unresolved",
+    "surfaces": [],
     "targets": []
   }
 }

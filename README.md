@@ -1,177 +1,99 @@
-# Spec Kit QC — team workflow v2.2
+# Spec Kit QC preset — v3.0
 
-A profile-based QC extension for the team's projects. It combines requirement review, case
-design, automation planning, execution evidence and release decisions. The workflow applies to
-browser, service, native, data, library/CLI, infrastructure, AI and manual/content work; the
-execution tools depend on the actual project. Bundled Link browser skills are not universal
-native or backend test runners.
+Testing is part of the Spec Kit development lifecycle. There are no separate `speckit.qc.*`
+commands and no hooks any more: this preset appends a **Quality Control** article to the
+constitution, appends testing sections to the core plan and tasks templates, wraps six core
+commands with the testing activity of their stage, and ships the QC artifact templates. Policy
+lives in one place — the constitution's Quality Control article (QC-0 … QC-18) — and the
+procedures live in the Spec Kit commands.
 
-The constitution's Quality Control article is the only policy/configuration authority.
-[Project profiles](references/project-profiles.md) select applicability and routes.
-[Integration rules](references/skill-integration.md) adapt the Link skills without changing their
-canonical source. Results remain local; Azure publication/synchronization stays excluded.
-
-## Workflow
+## The flow
 
 ```text
-One-time: constitution QC article → qc.setup (profile, capabilities, paths)
-
-specify → clarify → qc.review
-                      └─ open business questions → clarify → review again
-plan → qc.plan → tasks → qc.tcs → human plan/case approval
-analyze → qc.gate → implement
-  optional browser TC validation: qc.validate (CLI 3c only when applicable)
-  selected automated targets: qc.automate → qc.review-automation
-  designated environment/artifact: qc.run-env <environment-id>
-  manual + automated evidence: qc.execute → actual human GO / NO-GO
+/speckit.constitution   QC article + project configuration · Testing/qa-manifest.json · Testing/project-learning.md
+/speckit.specify        stories with observable acceptance scenarios (core template, unchanged)
+/speckit.clarify        + testability review (QC-5) → questions answered into spec.md, items in checklists/requirements.md
+/speckit.plan           + test-plan.md beside plan.md: scope, risk, traceability, HIGH-LEVEL TEST-CASE TITLES,
+                          automation approach, test data, EVERY OPEN QUESTION (decided by agent or asked once)
+   ── human: the QC Lead approves test-plan.md — the ONLY QC review checkpoint ──
+/speckit.tasks          gate on approval + zero Open questions → expands §4 into TEST-CASES-<feature>.md and
+                          TEST-DATA-<feature>.md (skill-3 format, APPROVED via the plan) → QC phases in tasks.md
+/speckit.analyze        + QC consistency (traceability, approval freshness, open questions, QC tasks present)
+/speckit.implement      build with tests → run the app locally → live validation of the test cases on the local
+                          instance (skill 3c) → automation (skill 5) → fix and re-run → updated test cases, run
+                          status and results recorded in test-plan.md → push only afterwards
+any time                /link-qc-md-to-html <file or feature folder> → HTML pages
 ```
 
-Manual-only scope goes directly to planned human execution; automation is N/A, not PASS.
-Environment names/phases are project-defined; a package/job/device may have no website or
-deployment. Reuse current evidence across phases only when build/config/data/scope match.
-Converge, if installed, checks implementation completeness; otherwise record explicit evidence.
-It is not proof that tests passed.
+Feature artifacts live in `specs/<NNN-feature>/`: `test-plan.md`, `TEST-CASES-<feature>.md`,
+`TEST-DATA-<feature>.md`, `TC-REVIEW-<feature>.html`, `evidence/`. Automation code and run
+outputs live under `Testing/Automation/` (paths in `Testing/qa-manifest.json`); skill 5 writes
+`TEST-RUN-REPORT-<feature>.md` and `BUG-REPORT-<feature>.md` under its `reports` path, linked from
+the test plan.
 
-## Commands and execution routes
+## What is in the preset
 
-| Command | Responsibility |
+| File | Strategy | Content |
+|---|---|---|
+| `templates/constitution-template.md` | append | Quality Control article: roles (QC-0), authority, surfaces, the single review point, traceability, requirements quality, test design, test data, live validation, automation, UI audit, coverage, environments, evidence, defects, release, exceptions, retained skills, stage map (QC-18), configuration table |
+| `templates/plan-template.md` | append | plan.md "Testing Strategy" + "QC Requirements for Development" |
+| `templates/tasks-template.md` | append | Phase T (testability asks), per-story developer tests, Phase V (local run, validation, automation, fix loop, results, push) |
+| `templates/test-plan-template.md` | new | the test plan — sections 1–11, Approval Record, result sections filled at implement |
+| `templates/test-cases-template.md` | new | `TEST-CASES-<feature>.md` — the frozen skill-3 format read by skills 3c and 5 and the renderer |
+| `templates/test-data-template.md` | new | `TEST-DATA-<feature>.md` — environments `[E]`, accounts `[A]` by secret name, data items `[D]` |
+| `templates/qa-manifest-template.json`, `templates/project-learning-template.md` | new | the two project files the retained skills read |
+| `commands/speckit.constitution.md` … `speckit.implement.md` | wrap | the core command stays byte-for-byte (`{CORE_TEMPLATE}`); the QC steps follow it (tasks and implement also add a gate before it) |
+| `.claude/skills/link-qc-3c-validate-manual-test-cases-cli` | retained | live validation through playwright-cli |
+| `.claude/skills/link-qc-5-test-run-automation` | retained | Playwright automation, compliance validator, watchdog, run report |
+| `.claude/skills/link-qc-6-ui-testing` | retained, optional | visual audit through the Playwright MCP |
+| `.claude/skills/link-qc-md-to-html` | new | one converter for every QC Markdown file, built from the existing renderers |
+| `snippets/CLAUDE-md-qc-section.md` | optional | short agent orientation for work outside the commands |
+
+## Where the former skills went
+
+| Former skill | Now |
 |---|---|
-| /speckit.qc.setup | Inspect profile/capabilities, select required skills, configure paths/policy aliases |
-| /speckit.qc.review | Link skill 2 reviews clarified local requirements |
-| /speckit.qc.plan | Risk/ownership/scope/regression + feasible feature automation design |
-| /speckit.qc.tcs | Link skill 3 designs cases/data requirements; no live browser |
-| /speckit.qc.gate | Current development readiness, design approval and traceability |
-| /speckit.qc.validate | Optional browser TC validation via Link CLI skill 3c |
-| /speckit.qc.automate | Implement/run approved work using selected Link or project runner |
-| /speckit.qc.review-automation | Appropriate code/readiness/results review for that runner |
-| /speckit.qc.run-env | Run reviewed scope on an actual configured target/environment |
-| /speckit.qc.execute | Collect human/automated evidence and assess release readiness |
+| 1 generate-update-testing-structure | `/speckit.constitution` creates `Testing/qa-manifest.json` and `project-learning.md`; layout and learning-file rules → QC-1, QC-17 |
+| 2 review-requirements | `/speckit.clarify` testability review; six dimensions, risk levels, dependency rules → QC-5; findings → clarify questions and `checklists/requirements.md` (no REQ files — spec.md IDs are the traceability keys) |
+| 3 generate-manual-test-cases | `/speckit.plan` (high-level cases, open questions) and `/speckit.tasks` (expansion); design rules → QC-6, data rules → QC-7, format → `test-cases-template` / `test-data-template`; its HTML renderer → `link-qc-md-to-html` |
+| 3b validate (Playwright MCP) | retired — the team selected the CLI validator (3c) |
+| 3c validate (playwright-cli) | **retained**, invoked by `/speckit.implement`; state semantics and authorisation → QC-8 |
+| 4, 7, 8 Azure DevOps publish / sync | retired — Azure publishing and synchronisation are out of scope (QC-17) |
+| 5 test-run-automation | **retained**, invoked by `/speckit.implement`; gates, smoke gate, heal rules, evidence, compliance → QC-9; its renderer mirrored into `link-qc-md-to-html` |
+| 6 ui-testing | **retained**, optional at implement; measurement rules → QC-10 |
+| 9 retesting | retired — retest rules → QC-14; reruns happen through 3c / 5 at implement |
+| 10 white-box, 11 discover-business-rules | retired (earlier team decision); implementation verification is a test-plan section at implement; `/speckit.converge` covers spec-vs-code gaps |
+| 12 adhd-output-style | retired — chat style, not a lifecycle activity |
 
-- **link-playwright**: supported browser automation with skill 5, its config/POM/evidence and
-  Checkpoints A/B. Every invocation passes `ado_mode: local`, even if old mappings exist.
-- **project-runner**: the repository's verified toolchain for API, native, data, library or other
-  automation. Record config, scoped commands, working directory and native/local result mapping.
-  Missing tooling/access is BLOCKED; no promised integration or automatic framework install.
-- **manual-only**: named tester, approved procedures and real evidence; no fabricated suite.
-- **unresolved**: an explicit decision owner/deadline; dependent execution cannot proceed.
+## Install
 
-API-only work normally uses project-runner. Link API-only capability must be verified in the
-installed skill before selecting it; the framework's HTTP support alone is insufficient.
-Hybrid products use multiple routes and cross-surface traceability. Review/TC design still use
-the agreed four-skill family: 2, 3, 3c and 5, with browser-only skills installed only when needed.
-White-box and business-rule discovery remain removed.
-For new projects, plan the runner/configuration/dependencies with a named setup owner. Proposed
-commands become executable only after actual configuration verifies them. An existing runner is
-preferred where suitable; its absence does not prevent designing a new project's test strategy.
+Requires Spec Kit ≥ 0.16.2 (preset composition) and Python 3 with PyYAML for the template resolver
+once a preset is installed (`python -m pip install pyyaml`). Node ≥ 18 for the retained skills.
 
-## Install and configure
-
-The supplied skill registration examples target Claude Code. Other hosts need verified skill
-format/tool support and adapted registration; the general QC documents do not prove host
-compatibility. Use the team's compatible pinned Spec Kit release. No Azure connection is needed.
-
-1. In an initialized Spec Kit project, install from the folder containing extension.yml:
-
-   ```sh
-   specify extension add qc --dev ./spec-kit-qc
-   specify extension list
-   ```
-
-   Replace the path with your extension checkout. Reload the agent. There are 10 commands and
-   five hooks. Installation/hook details are in the
-   [official extension guide](https://github.com/github/spec-kit/blob/main/extensions/EXTENSION-DEVELOPMENT-GUIDE.md).
-
-2. Merge `snippets/constitution-qc-article.md` with `/speckit.constitution`, preserving the
-   existing constitution. Confirm relevant values/owners; N/A needs a reason and pending values
-   name a due phase. Do not create separate steering/project-config files.
-
-3. Run `/speckit.qc.setup <local-Link-skills-directory>`. It inspects the stack and reuses
-   existing runners/QA paths. Review/design are common; select 3c/5 only for their supported
-   browser scope. Claude Code's default skills path is .claude/skills; it is configurable.
-   Setup protects local edits and validates copied metadata. If the source review skill still
-   has an invalid unquoted description, quote the identical text in the installed copy only.
-
-4. If using the team's skill sync command, select only needed skill folders. For a browser project:
-
-   ```text
-   /sync-skills link-qc-2-review-requirements link-qc-3-generate-manual-test-cases link-qc-3c-validate-manual-test-cases-cli link-qc-5-test-run-automation
-   ```
-
-   Non-browser review/design need only the first two. Preserve local-change protections; do not
-   run unrestricted sync. Add --tools only when its optional installations are intended.
-   Re-run qc.setup after updates. The generic foundation repair would recreate policy layers,
-   so it is not this extension's setup path.
-
-5. Verify only selected tools. Browser validation probes playwright-cli then its no-install
-   local invocation; no MCP fallback. Other routes use existing runner/runtime requirements.
-   Node/browser dependencies are not universal prerequisites for every project.
-
-6. Merge optional plan/tasks snippets into template overrides, preserving current customizations.
-   Create only applicable development asks. Configure actual environment/artifact IDs and secret
-   references; never copy passwords into documents or commands.
-
-## QC planning and management
-
-The [test-plan template](templates/test-plan-template.md) retains sections 1–9. Small changes may
-use concise rows; complex changes need enough detail to make scope and feasibility reviewable.
-
-| Section | Management decision |
-|---|---|
-| 1–2 | Profile/change mode, in/out scope, impact/risk, ownership, effort/access and applicable checks |
-| 3–4 | Source-to-case traceability, distinct coverage denominators, baseline debt and regression selection |
-| 5–6 | Actual environment/artifact readiness, variants and named human execution |
-| 7 | Feature-specific automation route, reuse/files, prerequisites, data lifecycle, assertions/evidence, work order and maintenance |
-| 8–9 | Developer dependencies, phased readiness, suspend/resume, triage/retest and release conditions |
-
-qc.plan consumes implementation details only to choose HOW; requirements decide expected outcomes.
-qc.tcs reconciles actual TC/data references before final approval. Development entry does not
-require a deployed app, final account access or completed automation. Execution entry does.
-Valid existing dev-owned tests are reused with an accountable owner, not duplicated as QC tests.
-
-## Artifacts and steering references
-
-| Artifact | Location |
-|---|---|
-| QC policy/project values | .specify/memory/constitution.md |
-| Routing and host configuration | Testing/qa-manifest.json; extension-owned qc profile/targets |
-| Review/inventory/source hashes | specs/NNN-feature/qc-review.md |
-| Feature plan/design approval/run links | specs/NNN-feature/test-plan.md |
-| Final evidence/decision | specs/NNN-feature/qc-signoff.md |
-| Requirements / cases | Manifest paths under SPEC-NNN-feature/US-id-name |
-| Automation/native output/local summaries | Per-target paths/configuration |
-| Reusable knowledge | Manifest learningFile |
-
-All occurrences of steering are intentional compatibility/provenance or no-steering instructions.
-Legacy manifest keys `steering.readme/L1/L2/L3` all point to the constitution; `steering.dir`
-is its parent. Deduplicate the file, do not search for/install four layers, and do not run repair
-against that parent. The constitution has actual policy values; aliases alone do not supply them.
-Keep these keys until the upstream skills no longer expect them. The `qc` metadata belongs to
-this extension, not to an assumed upstream schema. See the [review findings](QC-SKILLS-VS-SPECKIT-REVIEW.md).
-
-## Hooks and upgrade
-
-Merge or replace only this extension's hook entries; preserve others and avoid duplicates:
-
-```yaml
-hooks:
-  after_clarify:
-    - {extension: qc, command: speckit.qc.review, enabled: true, optional: false}
-  after_plan:
-    - {extension: qc, command: speckit.qc.plan, enabled: true, optional: false}
-  after_tasks:
-    - {extension: qc, command: speckit.qc.tcs, enabled: true, optional: true, prompt: "Design test cases now?"}
-  before_implement:
-    - {extension: qc, command: speckit.qc.gate, enabled: true, optional: false}
-  after_implement:
-    - {extension: qc, command: speckit.qc.validate, enabled: true, optional: true, prompt: "Check applicability and validate browser TCs with CLI?"}
+```sh
+specify preset add --dev ./spec-kit-qc        # path to this folder
+specify preset list
+specify preset resolve test-plan-template      # check composition
 ```
 
-Older templates that do not dispatch after_clarify need a compatible upgrade or explicit
-qc.review after clarify. Hook prompts are agent instructions, not hard server-side enforcement.
+Then:
 
-From v2.1, fill the profile/target routing and refresh existing plans using the revised template;
-retain all prior evidence and approvals as history. Reuse known framework values; do not replace
-them with unresolved template placeholders. Review design changes and renew approval as needed.
-From v2.0, also remove obsolete installed publication registrations/instructions. Preserve external
-records, mappings and shared skill libraries. From v1.1, remove the old QC after_specify hook.
-Historical standalone policy files may remain but are no longer inputs.
+1. Copy the four retained skills from `.claude/skills/` into the project's `.claude/skills/` (or run
+   `/sync-skills link-qc-3c-validate-manual-test-cases-cli link-qc-5-test-run-automation link-qc-6-ui-testing`
+   from the canonical repo and copy `link-qc-md-to-html` from this preset). Install playwright-cli
+   with `/sync-skills --tools` when the project has a browser surface.
+2. Run `/speckit.constitution` once: the Quality Control article is merged (existing articles are
+   preserved), the QC Lead fills the configuration table, and the two `Testing/` files are created.
+3. Optionally append `snippets/CLAUDE-md-qc-section.md` to the project's `CLAUDE.md`.
+4. Secrets: `E1_URL`, `A{n}_USER` / `A{n}_PASSWORD` in the secret store or environment — never in files.
+
+## Upgrading from the v2.2 extension
+
+1. `specify extension remove qc` (removes the `speckit.qc.*` commands and hooks), then install this preset.
+2. Run `/speckit.constitution` to replace the old QC article with QC-0 … QC-18 (project values are kept).
+3. Remove the retired skill folders from the project's `.claude/skills/` (1, 2, 3, 3b, 4, 7–12).
+4. Existing features: keep old `Testing/Requirements` and `Testing/Manual_Test` trees as history. For an
+   active feature run `/speckit.plan` to create `test-plan.md` (reuse existing TCs as §4 rows), get it
+   approved, then `/speckit.tasks`. The manifest's `steering` keys now all alias the constitution.
+
+History of the earlier reviews: [docs/history/QC-SKILLS-VS-SPECKIT-REVIEW-v2.2.md](docs/history/QC-SKILLS-VS-SPECKIT-REVIEW-v2.2.md).

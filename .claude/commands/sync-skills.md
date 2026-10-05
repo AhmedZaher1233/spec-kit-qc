@@ -6,6 +6,14 @@ allowed-tools: Bash(node *sync-qa-skills.mjs*), Bash(curl *), Bash(mkdir *), Rea
 
 # /sync-skills — update the QA skills in this project from the source repo
 
+> **Spec Kit qc preset (v3.0):** this project uses only four QC skills. Always pass their names so the
+> retired ones are not re-downloaded:
+> `/sync-skills link-qc-3c-validate-manual-test-cases-cli link-qc-5-test-run-automation link-qc-6-ui-testing`
+> (`--tools` installs playwright-cli for a browser project). `link-qc-md-to-html` ships with the preset
+> (`spec-kit-qc/.claude/skills/link-qc-md-to-html`) — copy it from there until the canonical repo carries it.
+> The bootstrap below downloads only the sync script into a `link-qc-1-…/scripts/` folder; that folder is
+> tooling, not an active skill, and may be deleted after the sync.
+
 Source of truth: `https://github.com/AhmedZaher1233/Link_AI_Pro` (branch `main` unless
 `--branch` is given). It owns every skill folder listed in `lib.mjs` `SKILLS` (1-12, 3b and 3c, all sub-folders), this command, — inside
 `.mcp.json` — only the `docx` MCP entry plus any legacy `word` entry it replaces, and — only when

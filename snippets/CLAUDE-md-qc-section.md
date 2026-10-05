@@ -1,26 +1,22 @@
-<!-- Merge into CLAUDE.md for Claude Code, or a verified host's instruction file. -->
+<!-- Optional: merge into the project's CLAUDE.md (or the host's agent-instructions file). Everything
+     here is also enforced by the constitution's Quality Control article and the wrapped commands;
+     this snippet only keeps the agent oriented when it works outside a /speckit.* command. -->
 
-## QC workflow (Spec Kit + Link QC)
+## Quality Control (Spec Kit qc preset)
 
-- Read `.specify/extensions/qc/references/skill-integration.md` and project-profiles.md.
-  The constitution QC article is the only policy/config authority. Legacy steering aliases point
-  to it; do not load/create separate policy layers or run foundation repair. Use qc.setup.
-- Order: specify → clarify → qc.review → plan/qc.plan → tasks/qc.tcs → human design approval
-  → analyze/qc.gate → implement → applicable optional CLI validation → selected automation/
-  manual execution → evidence review → release decision on the configured target(s).
-- Review/design skills 2/3 apply to local requirement files across profiles. Browser validation
-  uses CLI skill 3c only; no MCP fallback. No browser surface means tool N/A, not missing-tool FAIL.
-- Supported browser automation uses skill 5 with explicit `ado_mode: local`. Other targets use
-  their verified project runner or manual procedures; new runner setup must be explicitly planned.
-  Never claim native/API/data support
-  simply because a browser tool is installed. No Azure publishing/sync even if old mappings exist.
-- qc.plan chooses profile/risk, owners, regression and measurable outcomes, then section 7
-  records feature strategy, reuse/files, prerequisites, data isolation/cleanup, oracles/groups
-  and work order. qc.automate/qc.run-env follow the approved routes; manual-only is valid.
-- spec.md is the business oracle. Answers enter it through clarify; QC metadata and hashes
-  stay in qc-review.md. Code observations/learning cannot settle missing business decisions.
-- Recheck source/design approvals and scope every gate. Development needs planned testability,
-  not a deployed app or passing automation. Execution needs current build/data/config/evidence.
-- Reuse existing suites and name owners. Preserve formats, HUMAN markers, reference tokens,
-  history and real human approval. Tool success/zero tests/skips/unknowns are never acceptance PASS.
-- Resolve paths from the manifest; specs/NNN-feature maps to Testing/.../SPEC-NNN-feature.
+- Policy: the `## Quality Control` article of `.specify/memory/constitution.md` (QC-0 … QC-18) is
+  the only QC policy and configuration source. No steering or standards files exist.
+- Testing lives inside the Spec Kit stages: clarify = testability review; plan = `test-plan.md`
+  beside `plan.md` (the single QC review, approved by the QC Lead); tasks = `TEST-CASES-<feature>.md`
+  + `TEST-DATA-<feature>.md` expanded from the approved plan plus the QC phases of tasks.md;
+  implement = run the app locally → live validation (skill 3c) → automation (skill 5) → fix and
+  re-run → record results in test-plan.md → push.
+- `spec.md` is the business oracle; answers enter it only through `/speckit.clarify`. Test-case,
+  automation and test-data questions live in test-plan.md §11 and none may stay Open after plan
+  approval. Never invent an expected result, an owner, a URL or a count.
+- Retained skills, invoked only with explicit paths: `link-qc-3c-validate-manual-test-cases-cli`
+  (live validation, `--authorize-revision`, local build first), `link-qc-5-test-run-automation`
+  (`ado_mode: local`, `qa_standards: .specify/memory/constitution.md`), `link-qc-6-ui-testing`
+  (optional visual audit), `link-qc-md-to-html` (every HTML page; never hand-written HTML).
+- Secrets only by name (`E{n}_URL`, `A{n}_USER` / `A{n}_PASSWORD`); reference tokens
+  `[E]/[A]/[D]` in test cases; no selectors or code in QC documents; reports stay local.
