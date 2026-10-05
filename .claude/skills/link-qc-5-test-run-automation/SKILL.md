@@ -662,6 +662,17 @@ test has no variation). Locale variants `TC-01` / `TC-01b` are separate TCs, not
 `<second_run>` compares the executed variants against this list — a TC with a required variant
 missing is `INCOMPLETE`, never `PASS`.
 
+**TC fingerprint per automated TC.** The plan also records `tc_hash[tc_id]` — the semantic hash
+of the approved TC from `node scripts/tc-hash.mjs --tc {source_tc_doc} --data {test_data_doc}`
+(behaviour fields plus the referenced test-data rows; Validation, evidence stamps, Smoke, Tags and
+the heading are excluded, so a live-validation patch or a formatting edit never changes it —
+`scripts/selftest-tc-hash.mjs` guards that contract). On every later phase the current hashes are
+recomputed and compared with the ones recorded when the automation was written: a changed hash
+means the TC's behaviour changed after its spec was generated — the spec is re-reviewed against
+the current TC before its result is trusted, the TC is listed under `### Deviations` as
+`tc-changed since phase {N}` (never silently re-hashed), and the recorded value is replaced only
+once the spec matches the current TC again.
+
 **`{run_file}.run_plan` shape:**
 
 ```json
@@ -673,6 +684,7 @@ missing is `INCOMPLETE`, never `PASS`.
     "TC-001": ["chromium--none--r0"],
     "TC-007": ["chromium--variation-a--r0", "chromium--variation-b--r0"]
   },
+  "tc_hash": { "TC-001": "sha256 from scripts/tc-hash.mjs when the spec was written", "TC-007": "…" },
   "setup_groups": [
     { "name": "setup:order-items", "mode": "serial", "workers": 1, "spec": "tests/Orders_Tests/00-setup-order-items.spec.ts",
       "provides": "an order with line items", "decision": "ui", "cleanup": "delete", "source": "qc" }
@@ -2192,9 +2204,10 @@ If no screenshot exists, say so plainly rather than omitting the field —
 Azure DevOps publishing and synchronisation are out of scope (constitution QC-17). Under
 `ado_mode = local` — the only mode the invoking command passes — this phase is skipped and
 recorded in the structured return as `not applicable — Azure DevOps out of scope (QC-17)`; no
-work item, test point or map file is read or written. (`scripts/tc-hash.mjs` and its harness
-`selftest-tc-hash.mjs` remain in the folder as the canonical semantic TC hash; they are not
-used under `local`.)
+work item, test point or map file is read or written. `scripts/tc-hash.mjs` (with its harness
+`selftest-tc-hash.mjs`) is not an Azure tool: it is the semantic TC fingerprint recorded in
+`{run_file}.run_plan.tc_hash` and compared across phases (PHASE 2 "TC fingerprint per automated
+TC").
 </ado_closeout>
 
 ---

@@ -1,10 +1,9 @@
 #!/usr/bin/env node
-// MIRROR — byte-identical copies live in link-qc-4-publish-test-cases-azure/scripts/ (canonical)
-// and link-qc-5-test-run-automation/scripts/. /sync-skills copies one skill folder at a time, so
-// neither skill imports the other's copy. Edit both; each skill's harness asserts the same golden
-// hash for the same fixture, which catches drift.
-//
-// Canonical test-case hash — SEMANTIC, not textual.
+// Canonical test-case hash — SEMANTIC, not textual. The only copy lives here: the Azure DevOps
+// publishing skill that once mirrored it is retired (constitution QC-17). link-qc-5 records the
+// hash per automated TC in the run file (`tc_hash`) and compares it across phases — a changed hash
+// means the TC's behaviour changed after its automation was written, so the spec is re-reviewed
+// before that result is trusted.
 //
 //   hash = sha256( behaviour fields of the TC  +  fingerprint of the data rows it references )
 //

@@ -182,8 +182,8 @@ OUTPUT — WHAT YOU GET
                                   element identification, env fixes, Q&A
   Self-test harnesses the skill runs before trusting its scripts (each exits non-zero on mismatch):
     scripts/selftest.mjs (validator, 18 cases incl. the page-object duplicate rule) ·
-    selftest-run-report.mjs (23) · selftest-watchdog.mjs · selftest-config-inventory.mjs ·
-    selftest-tc-hash.mjs (the canonical TC hash; not used under ado_mode local)
+    selftest-run-report.mjs (27) · selftest-watchdog.mjs (10) · selftest-config-inventory.mjs (7) ·
+    selftest-tc-hash.mjs (14; the semantic TC fingerprint recorded in run_plan.tc_hash and compared across phases)
 
 WHEN TO RUN: at /speckit.implement, after the QC Lead approved the test plan and
 TEST-CASES-{feature}.md carries Status: APPROVED, once the implementation runs locally

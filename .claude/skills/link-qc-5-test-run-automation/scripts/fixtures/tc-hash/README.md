@@ -7,8 +7,7 @@ golden hash for this pair and the canonical-hash rules (formatting-only edits �
 quoted value, referenced-data shape, account role or `Shared data` → different hash; username, URL,
 Validation, evidence stamp, Tags → same hash).
 
-The same two files, byte for byte, live in `link-qc-4-publish-test-cases-azure/scripts/fixtures/tc-hash/`
-and that skill's harness asserts the same golden constant — a drift between the two hash copies shows
-up as two different goldens. Regenerate the constant only for a deliberate change of `tc-hash.mjs`
-(`node scripts/tc-hash.mjs --tc scripts/fixtures/tc-hash/TEST-CASES-hash-sample.md --pretty`) and
-change both harnesses together.
+The harness reads both files with line endings normalised to LF, so an LF or a CRLF checkout gives
+the same verdict; case 13 also hashes a CRLF copy written to disk. Regenerate the golden constant
+only for a deliberate change of `tc-hash.mjs`
+(`node scripts/tc-hash.mjs --tc scripts/fixtures/tc-hash/TEST-CASES-hash-sample.md --pretty`).

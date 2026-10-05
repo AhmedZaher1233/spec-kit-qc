@@ -2,16 +2,19 @@
 // selftest-tc-hash.mjs — regression harness for tc-hash.mjs (the canonical test-case hash).
 //
 // THIS SCRIPT EXITS NON-ZERO ON MISMATCH, ON PURPOSE. It is a test harness, not one of the
-// read-only reporting scripts. A failing self-test means `automated_tc_sha256` values written to
-// ADO-MAP.md cannot be trusted: do not write the column until the harness passes again.
+// read-only reporting scripts. A failing self-test means the `tc_hash` values this skill records
+// per automated TC in the run file (the "automation written for TC version X" fingerprint that is
+// compared across phases) cannot be trusted: do not record or compare them until it passes again.
 //
-// The fixture pair under fixtures/tc-hash/ is byte-identical to skill 4's, and GOLDEN below is the
-// constant skill 4's harness asserts on the same pair — the two hash copies must agree.
+// The fixture pair under fixtures/tc-hash/ is read with line endings normalised to LF, so the
+// harness gives the same verdict on an LF or a CRLF checkout (core.autocrlf); case 11 asserts
+// separately that CRLF never changes the hash and case 13 hashes a CRLF copy written to disk.
 // Run: node selftest-tc-hash.mjs [--pretty]
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import os from 'node:os';
 import { spawnSync } from 'node:child_process';
 import { hashDocument, parseTcDocument, parseTestData, tcHash, canonicalTc, normText, HASH_VERSION } from './tc-hash.mjs';
 
@@ -20,10 +23,11 @@ const FX = path.join(here, 'fixtures', 'tc-hash');
 const TC_FILE = path.join(FX, 'TEST-CASES-hash-sample.md');
 const DATA_FILE = path.join(FX, 'TEST-DATA-hash-sample.md');
 const ID = 'TC-HASH-01';
-/** The one golden hash of TC-HASH-01 on this fixture pair — skill 4's selftest-ado-sync.mjs asserts the same value. */
+/** The one golden hash of TC-HASH-01 on this fixture pair. Regenerate ONLY for a deliberate tc-hash.mjs change. */
 export const GOLDEN = '935858124e72e0dd04faac4bdcc7870cd70171fbb00cdf851033120ad7c79bb8';
 
-const read = (p) => fs.readFileSync(p, 'utf8');
+/** Fixtures are normalised to LF so the mutation needles (written with \n) match on any checkout. */
+const read = (p) => fs.readFileSync(p, 'utf8').replace(/\r\n?/g, '\n');
 const TC_TEXT = read(TC_FILE);
 const DATA_TEXT = read(DATA_FILE);
 const hashOf = (tcText = TC_TEXT, dataText = DATA_TEXT) => hashDocument(tcText, dataText, [ID])[ID];
@@ -40,7 +44,7 @@ const expectDifferent = (p, label, h) => { if (h.hash === GOLDEN) p.push(label +
   const p = [];
   const h = hashOf();
   if (!h) p.push(ID + ' not parsed from the fixture');
-  else if (h.hash !== GOLDEN) p.push('golden mismatch: ' + h.hash + ' (expected ' + GOLDEN + ') — regenerate ONLY for a deliberate tc-hash.mjs change, and change skill 4\'s harness with it');
+  else if (h.hash !== GOLDEN) p.push('golden mismatch: ' + h.hash + ' (expected ' + GOLDEN + ') — regenerate ONLY for a deliberate tc-hash.mjs change');
   if (h && !h.canonical.startsWith(HASH_VERSION + '\nid=' + ID)) p.push('canonical form does not start with the version line');
   if (h && !/data=A1=Administrator\|[^;]*;D1=[^;]*;E1=application base URL$/.test(h.canonical)) p.push('data fingerprint does not carry role / item / what only: ' + h.canonical.split('\n').pop());
   if (h && /admin\.user|portal\.example|READY/.test(h.canonical)) p.push('a username, an environment value or a status leaked into the canonical form');
@@ -158,20 +162,19 @@ const expectDifferent = (p, label, h) => { if (h.hash === GOLDEN) p.push(label +
   check('12 CLI', p, {});
 }
 
-/* 13 — MIRROR: this copy must be byte-identical to skill 4's canonical tc-hash.mjs and share the fixture pair (skipped when the sibling is absent). */
+/* 13 — line endings of the fixture on disk: a CRLF copy gives the same hash and CLI payload as the LF fixture. */
 {
-  const p = []; let skipped = false;
-  const sha = (f) => crypto.createHash('sha256').update(fs.readFileSync(f)).digest('hex');
-  const sib = path.resolve(here, '..', '..', 'link-qc-4-publish-test-cases-azure', 'scripts');
-  if (!fs.existsSync(path.join(sib, 'tc-hash.mjs'))) skipped = true;
-  else {
-    if (sha(path.join(here, 'tc-hash.mjs')) !== sha(path.join(sib, 'tc-hash.mjs'))) p.push('tc-hash.mjs differs from skill 4\'s canonical copy — copy it byte for byte, never edit it here');
-    for (const f of ['TEST-CASES-hash-sample.md', 'TEST-DATA-hash-sample.md']) {
-      const other = path.join(sib, 'fixtures', 'tc-hash', f);
-      if (fs.existsSync(other) && read(other).replace(/\r\n?/g, '\n') !== read(path.join(FX, f)).replace(/\r\n?/g, '\n')) p.push('fixture ' + f + ' differs from skill 4\'s copy — the two goldens would drift');
-    }
-  }
-  check('13 mirror of skill 4\'s tc-hash.mjs and fixture pair', p, { skipped });
+  const p = [];
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tc-hash-crlf-'));
+  try {
+    const tc = path.join(dir, 'TEST-CASES-hash-sample.md'); const data = path.join(dir, 'TEST-DATA-hash-sample.md');
+    fs.writeFileSync(tc, TC_TEXT.replace(/\n/g, '\r\n')); fs.writeFileSync(data, DATA_TEXT.replace(/\n/g, '\r\n'));
+    const r = spawnSync(process.execPath, [path.join(here, 'tc-hash.mjs'), '--tc', tc, '--ids', ID], { encoding: 'utf8' });
+    let j; try { j = JSON.parse(r.stdout); } catch { p.push('CLI on a CRLF copy did not print JSON'); }
+    if (j && (j.gate !== 'PASS' || j.hashes[ID] !== GOLDEN)) p.push('CRLF copy on disk hashes differently: ' + JSON.stringify(j && { gate: j.gate, hash: j.hashes && j.hashes[ID] }));
+    if (!TC_TEXT.includes('validated-on: —\nenv: —')) p.push('normalised fixture text lost the LF join the mutation needles rely on');
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  check('13 CRLF fixture on disk → same hash and payload', p, {});
 }
 
 /* 14 — a reviewer's `Reviewer comment` field (shown on the rendered pages, read by the skills) never changes a TC hash. */
@@ -191,7 +194,7 @@ const out = {
   ok: fail.length === 0,
   cases,
   mismatches: fail,
-  note: fail.length ? 'tc-hash.mjs disagrees with its own fixture. Do not write automated_tc_sha256 until this passes.' : 'All fixtures behave as documented.',
+  note: fail.length ? 'tc-hash.mjs disagrees with its own fixture. Do not record or compare tc_hash values until this passes.' : 'All fixtures behave as documented.',
 };
 process.stdout.write(JSON.stringify(out, null, process.argv.includes('--pretty') ? 2 : 0) + '\n');
 process.exit(fail.length ? 1 : 0);
