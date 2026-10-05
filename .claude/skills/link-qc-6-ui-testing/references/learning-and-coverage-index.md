@@ -93,10 +93,13 @@ Over successive audits this file becomes the project's de-facto UI spec: the
 question list shrinks, and more findings become provable rather than judgment
 calls.
 
-In a project set up by skill 1, also write each confirmed rule as one tagged
-line into `Testing/project-learning.md` — `## UI Knowledge` / `## Locale
-Knowledge` for the fact, `### UI Visual QA Model (skill 6) → #### Questions
-and Answers` for the `[type: qa]` line with `(confirmed by user {date})` — so
-the other skills (3, 3b, 6) see the same intent. Plain English, no selectors,
-no file paths, no credentials; `Learning-UI.md` keeps the measured detail.
+When `Testing/project-learning.md` exists, also write each confirmed rule as one
+tagged line into it — `## UI Knowledge` / `## Locale Knowledge` for the fact,
+`### UI Visual QA Model (skill 6) → #### Questions and Answers` for the
+`[type: qa]` line with `(confirmed by user {date})` — so the Spec Kit commands
+and the other retained skills see the same intent.
+
+> Policy: constitution "Quality Control" article QC-1 (learning-file content: confirmed facts with source and date; never a secret, selector, code identifier or verbatim requirement text). This skill applies it and does not restate it.
+
+`Learning-UI.md` keeps the measured detail.
 

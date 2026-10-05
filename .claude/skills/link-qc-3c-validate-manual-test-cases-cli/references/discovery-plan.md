@@ -39,7 +39,7 @@ Read every TC (`tc-format-contract.md`) and build the **discovery plan**:
 ## 2. Flags — accepted, never a question
 
 - `--full` / `--scope full` / "validate everything": already the only behaviour; accepted without
-  comment (3b takes the same flag, so the comparison protocol can pass it to both).
+  comment.
 - `--scope shared` / `--scope <TC-ID,…>`: **not supported by this skill.** State in one line that
   this skill always walks every TC, then walk every TC. Never narrow, never ask.
 - A sentence in the task naming a subset ("just TC-ORD-03") is answered the same way: one line,

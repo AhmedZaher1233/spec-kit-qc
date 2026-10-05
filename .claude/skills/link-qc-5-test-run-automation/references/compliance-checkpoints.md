@@ -1,5 +1,14 @@
 # Compliance checkpoints — the two mandatory gates
 
+> Policy: constitution "Quality Control" article QC-9 (compliance = static validator plus
+> semantic review, Checkpoint A before the run and Checkpoint B on the final code and
+> artifacts, reported separately from execution results; check states verified-mechanical,
+> verified-semantic, unresolved or N/A — an applicable check that did not run stays unresolved
+> and keeps the gate BLOCKED; automation is complete only when both checkpoints pass against the
+> current code digest). This skill applies it; this file is the mechanics — which checks run,
+> when, and how a gate is recorded.
+
+
 Loaded by `SKILL.md` at `<checkpoint_a>` (before execution) and `<checkpoint_b>` (after the final
 run). Both gates must reach **PASS for the final delivered scope** before you may claim automation
 compliance. They are separate from execution status: compliant tests can expose application defects,
@@ -180,10 +189,9 @@ Runs after generation and before anything is executed. It is the first gate in
 3. **Run the semantic review** for every `S` item above. A clean grep proves nothing about items 3,
    5, 7, 10, 11, 16, 39, 43, 44 or 47 — for item 5 the scanner only surfaces candidates; the
    inventory row's reason is what the review judges.
-4. **Fix confirmed automation-code violations immediately.** They are repairs, not recommendations:
-   do not defer them, do not list them for the user to approve, do not ask anyone to say "fix 1".
-   Routine repairs need no approval. Only an unresolved *business* decision — one that changes what
-   the expected behaviour is — goes to the user.
+4. **Fix confirmed automation-code violations immediately.** They are repairs, not recommendations
+   (constitution QC-9: routine automation-code repairs need no approval; only an unresolved
+   business decision goes to a human).
 5. **Repeat the affected checks** after every repair. A repair invalidates the checks it touched.
 6. **Proceed with the compliant scope only.** Tests whose applicable pre-run checks pass may run.
    Tests that remain blocked are isolated and reported against the original scope — never quietly

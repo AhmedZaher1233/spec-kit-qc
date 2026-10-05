@@ -15,11 +15,11 @@
 - [ ] TXXX Provide isolated seed, readiness check and cleanup hooks for [data] in [paths]
 - [ ] TXXX Provide test accounts / roles on the local build via secret names (A{n}_USER / A{n}_PASSWORD) — never values in files
 - [ ] TXXX Provide the local run script / health endpoint used for validation: [command]
-- [ ] TXXX Configure CI checks and coverage reporting per constitution QC-15 (unit, integration, static security, coverage floors)
+- [ ] TXXX Configure CI checks and coverage reporting per the constitution's Development article (DEV-3, DEV-4)
 
 ## Per user story (inside each "Implementation for User Story N" block)
 
-- [ ] TXXX [USn] Developer-owned unit / component / integration tests for [requirement IDs] in [paths], written before or alongside the code (QC-9)
+- [ ] TXXX [USn] Developer-owned unit / component / integration tests for [requirement IDs] in [paths], written before or alongside the code (constitution Development article DEV-1)
 
 ## Phase V: Validation, automation and fix loop (after the last user story, before Polish)
 

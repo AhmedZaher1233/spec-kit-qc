@@ -48,8 +48,10 @@ in this order, marking each task `[X]` as it completes. Nothing is pushed before
    is expanded; a requirement contradiction goes to `/speckit.clarify`.
 5. **Automation.** For link-playwright targets invoke `link-qc-5-test-run-automation` with the
    approved document path, the feature label as User Story, the local environment, `ado_mode:
-   local`, `qa_standards: .specify/memory/constitution.md`, and `coverage_target` /
-   `coverage_mechanism` from the constitution configuration (defaults 80 %, soft block). The skill
+   local`, `qa_standards: .specify/memory/constitution.md`, `coverage_target` /
+   `coverage_mechanism` and `smoke_gate` from the constitution configuration (defaults 80 %, soft
+   block, 30 %), and the data-change authorisation for this run (the same explicit yes / no given
+   for validation in step 3 — never stored, never assumed). The skill
    runs Checkpoint A, the data-readiness ask, smoke → smoke gate (30 %) → positive → negative,
    Checkpoint B, and writes `TEST-RUN-REPORT-<feature>.md`, `BUG-REPORT-<feature>.md` and the
    rendered page under the manifest's `reports` path. For project-runner targets implement and run
@@ -63,7 +65,9 @@ in this order, marking each task `[X]` as it completes. Nothing is pushed before
    steps, non-browser checks — PASS / FAIL / BLOCKED / NOT RUN / N/A, never blank) and the
    "Release decision" table with actuals; leave Decision PENDING unless the QC Lead and release
    owner state it. Update TEST-CASES header lines only through the skills. Optional: UI audit with
-   `link-qc-6-ui-testing` for screens the plan marked; log findings as bugs. Render pages with
+   `link-qc-6-ui-testing` for screens the plan marked — pass the screen URLs / labels, the design
+   reference if any, `breakpoints` (constitution `BREAKPOINTS_PX`), `locales` (`LANGUAGES`) and
+   `qa_standards: .specify/memory/constitution.md`; log findings as bugs. Render pages with
    `node .claude/skills/link-qc-md-to-html/scripts/convert.mjs FEATURE_DIR` (every QC Markdown
    file in the folder) and read the payload gates.
 7. **Push gate.** Only when validation findings and automation failures are fixed and re-run,

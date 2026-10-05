@@ -90,9 +90,10 @@ and for the implementation whenever DOM injection isn't possible.
 
 Requires Python with Pillow (and `numpy` for the colour-detection technique).
 **Verify the interpreter before relying on it** — the command differs by
-environment (`python`, `python3`, or `py` on Windows); skill 1's
-`validate-setup.mjs` reports it as the `Python + Pillow` row and
-`/sync-skills --tools` installs Pillow + numpy when Python is present. If
+environment (`python`, `python3`, or `py` on Windows). A missing interpreter or
+package is reported with its install command (`/sync-skills --tools` installs
+Pillow + numpy when Python is present) and is never installed by this skill
+(constitution QC-17). If
 Python or Pillow isn't available, fall back to the DOM-highlight method above
 for the implementation side; for a static design image, embed the **whole**
 design image (or the Figma `get_screenshot` of the specific node, which needs

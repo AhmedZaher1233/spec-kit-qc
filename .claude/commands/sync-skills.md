@@ -9,6 +9,8 @@ allowed-tools: Bash(node *sync-qa-skills.mjs*), Bash(curl *), Bash(mkdir *), Rea
 > **Spec Kit qc preset (v3.0):** this project uses only four QC skills. Always pass their names so the
 > retired ones are not re-downloaded:
 > `/sync-skills link-qc-3c-validate-manual-test-cases-cli link-qc-5-test-run-automation link-qc-6-ui-testing`
+> **Caution:** the preset ships trimmed copies of these three skills (policy text replaced by constitution
+> pointers); a sync re-downloads the untrimmed canonical versions. Prefer copying from the preset.
 > (`--tools` installs playwright-cli for a browser project). `link-qc-md-to-html` ships with the preset
 > (`spec-kit-qc/.claude/skills/link-qc-md-to-html`) — copy it from there until the canonical repo carries it.
 > The bootstrap below downloads only the sync script into a `link-qc-1-…/scripts/` folder; that folder is

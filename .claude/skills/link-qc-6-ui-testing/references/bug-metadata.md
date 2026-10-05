@@ -5,11 +5,12 @@ fields, loaded from Step 4B of SKILL.md. Choose exactly one value from each.
 
 **These lists are the suite's default catalogue** (the Azure DevOps process
 template most consumer projects use). Before the first report in a project,
-check `Testing/project-learning.md` → `### Publish Model (skill 4)` and
-`### UI Visual QA Model (skill 6)` for the tracker's actual field values;
-when the project records different ones, use those and keep this file as the
-fallback. `Testing Type: Integration Testing` is likewise the default value —
-override it only when the project's tracker or learning file says so.
+check `Testing/project-learning.md` → `### UI Visual QA Model (skill 6)` for the
+tracker's actual field values; when the project records different ones, use
+those and keep this file as the fallback. `Testing Type: Integration Testing`
+is likewise the default value — override it only when the project's tracker or
+learning file says so. Severity and Priority values follow constitution QC-14 /
+QC-10 (the `qa_standards` file); this file only maps metadata onto them.
 
 **Bug Trigger**
 
@@ -74,15 +75,18 @@ for spacing/alignment/contrast problems, `General Usability` for broken
 affordances or hierarchy issues, `Navigation issues` for broken RTL nav/flow,
 `Translation` for AR string/locale problems.
 
-**Automated accessibility findings** (axe-core, Pass 1b) map as follows — one
-bug per rule, node count inside the bug, `Confidence: High`:
+**Automated accessibility findings** (axe-core, Pass 1b).
 
-| axe `impact` | Severity | Priority | Bug Trigger | Impact | Classification |
-|---|---|---|---|---|---|
-| critical | Severity 2 - High | P2 | Basic Coverage | Usability | General Usability |
-| serious | Severity 3 - Medium | P2 | Basic Coverage | Usability | General Usability |
-| moderate | Severity 3 - Medium | P3 | Basic Coverage | Usability | UI/Layout Issue |
-| minor | Severity 4 - Low | P4 | Basic Coverage | User Interface | UI/Layout Issue |
+> Policy: constitution "Quality Control" article QC-10 (axe impact → Severity / Priority mapping, one bug per rule, `incomplete` never counted). This skill applies it and does not restate it.
+
+Metadata values per axe `impact`:
+
+| axe `impact` | Bug Trigger | Impact | Classification |
+|---|---|---|---|
+| critical | Basic Coverage | Usability | General Usability |
+| serious | Basic Coverage | Usability | General Usability |
+| moderate | Basic Coverage | Usability | UI/Layout Issue |
+| minor | Basic Coverage | User Interface | UI/Layout Issue |
 
 Exceptions: a missing form label or an unlabelled control is `Fields issue`; a
 wrong `lang` / `dir` on an AR page is `Translation`; keyboard traps and missing
@@ -90,16 +94,9 @@ landmarks / skip links are `Navigation issues`. In a design-comparison section
 an accessibility rule is still never `Design Conformance` — the design did not
 specify ARIA.
 
-This list is a starting reference, not guaranteed to be exhaustive or exactly
-correct — a project's Azure custom fields can differ subtly from what's
-documented here (spacing, abbreviations, combined options). If this report's
-data is later used to create or update an actual Azure work item and a
-create/update call is rejected with "value ... is not in the list of supported
-values" for `Bug Trigger`, `Impact`, or `Classification`, do not guess-and-retry
-blindly: find an existing work item that already uses a value in the same
-family (WIQL `CONTAINS` on the field, or on the title) and copy its exact field
-value verbatim, then record the value actually accepted as a `[type: qa]` line
-under `### UI Visual QA Model (skill 6)` in `Testing/project-learning.md`
-(never edit this synced file in a consumer project) so the next run doesn't hit
-the same rejection.
+This list is a starting reference, not guaranteed to be exhaustive — a
+project's tracker fields can differ subtly (spacing, abbreviations, combined
+options); the project's learning file wins when it records different values.
+Azure DevOps publishing and synchronisation are out of scope (constitution
+QC-17); the report stays local.
 

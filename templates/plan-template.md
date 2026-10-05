@@ -11,7 +11,7 @@
 - **High-level test cases**: [N] ([S] smoke · [A] automation candidates · [M] manual-only) — see test-plan.md §4
 - **Execution routes** (test-plan.md §8.1): [link-playwright for …; project-runner (`<runner>`) for …; manual-only for …]
 - **Local run for validation**: [command / URL the implementation exposes locally; seed or fixture needed]
-- **Developer-owned tests**: [unit / component / integration suites and where they live; coverage floors per constitution]
+- **Developer-owned tests**: [unit / component / integration suites and where they live; coverage targets per the constitution's Development article DEV-3]
 - **Open questions**: [o] open · [d] decided by agent · [a] answered — none may remain Open before /speckit.tasks
 
 ## QC Requirements for Development

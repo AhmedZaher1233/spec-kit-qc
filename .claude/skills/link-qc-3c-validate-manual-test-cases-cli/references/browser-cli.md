@@ -15,9 +15,9 @@ when a flag below does not exist in the installed version — never guess a flag
    `npx --no-install playwright-cli --version` → a project-local copy. Record the working prefix
    as `{pw}` for the whole run and print the version in the structured return.
 2. Neither works → **BLOCKED** immediately: "playwright-cli is not installed — run
-   `/sync-skills --tools` (installs playwright-cli and its browser) or
-   `/link-qc-1-generate-update-testing-structure repair`, then re-run this skill". No application ask, no
-   credentials question, no `npm` command from you, no fallback to the Playwright MCP server.
+   `/sync-skills --tools` (installs playwright-cli and its browser), then re-run this skill"
+   (QC-17). No application ask, no credentials question, no `npm` command from you, no fallback
+   to the Playwright MCP server.
 3. Browser check happens with the first `open` (§2): an error naming a missing browser
    executable → the same BLOCKED with the same hint (`install-browser` is sync's job, not yours).
 4. `.gitignore` without a `.playwright-cli/` line → one warning in the final message ("snapshot
@@ -55,22 +55,22 @@ a time.) On
 landing screen's heading); not found → report exactly what the page shows, ask once more, then the
 failure rule (`walk-rules.md` §7). Works with SSO / MFA; the model never sees a credential.
 
-**B. Secrets file.** The user ran skill 1's `set-playwright-secrets.ps1` / `.sh` once (the script
-is skill 1's and is never edited here); it stores `{NAME}_USER` / `{NAME}_PASSWORD` entries in a
-dotenv file outside the repository and points the user-level variable
-`PLAYWRIGHT_MCP_SECRETS_FILE` at it (the CLI shares that setting with the Playwright MCP backend,
+**B. Secrets file** (policy: QC-7 — secret names `A{n}_USER` / `A{n}_PASSWORD`, never a value
+anywhere). The project's secrets file stores `{NAME}_USER` / `{NAME}_PASSWORD` entries in a
+dotenv file outside the repository, and the user-level variable `PLAYWRIGHT_MCP_SECRETS_FILE`
+points at it (the CLI shares that setting with the Playwright MCP backend,
 which substitutes a secret NAME typed into a field with its value and masks the value in every
 output). **Secret names follow the account ID** the TC references: `A1_USER` / `A1_PASSWORD` for
-`[A1]`, `A2_USER` / `A2_PASSWORD` for `[A2]` — the user chose those names when running the
-script, and the combined ask confirms them per account. You type only the names:
+`[A1]`, `A2_USER` / `A2_PASSWORD` for `[A2]` — the user chose those names when creating the
+file, and the combined ask confirms them per account. You type only the names:
 `{pw} -s=… fill <username-ref> A{n}_USER` then `{pw} -s=… fill <password-ref> A{n}_PASSWORD
 --submit`. Then verify the login marker as in A. A name the file does not hold is a login
 failure (report it, never guess another name).
 **Probe on the first login:** login failed → `{pw} -s=… eval "el => el.value === 'A{n}_PASSWORD'"
 <password-ref>` (compares the field to the literal key name; it never reads the value out). `true`
 → substitution is not supported by the installed version: stop using B for the run, say so, offer
-A for that account (ONE question), and note the finding under Environment blockers so the comparison
-report can record it. `false` → the credentials themselves were rejected: report, re-ask once
+A for that account (ONE question), and note the finding under Environment blockers (§10).
+`false` → the credentials themselves were rejected: report, re-ask once
 (`walk-rules.md` §7). Never retry a secret name blindly, never ask for the password in chat, never
 write a value anywhere.
 
@@ -173,7 +173,7 @@ be compared with 3b's.
 
 ## 10. When the MCP server would still be needed
 
-Empty at delivery. A concrete capability the CLI could not provide during the comparison
-(`cli-vs-mcp-comparison.md`) is recorded here — what was needed, which TC, what the CLI did
-instead — so the decision about the default validator rests on evidence. A gap is never closed by
-weakening a check (an unobservable expected result stays `draft`, never `validated`).
+Empty at delivery. A concrete capability the CLI could not provide during a run is recorded here
+— what was needed, which TC, what the CLI did instead — and reported under Environment blockers,
+so a tooling decision rests on evidence. A gap is never closed by weakening a check (an
+unobservable expected result stays `draft`, never `validated`).

@@ -1,15 +1,14 @@
 SKILL: link-qc-3c-validate-manual-test-cases-cli
-WHAT IT DOES: OPTIONAL step after link-qc-3-generate-manual-test-cases, and the evaluation twin of
-link-qc-3b-validate-manual-test-cases. Executes an existing test-case document in the RUNNING application
-through the Playwright command line (playwright-cli) instead of the Playwright MCP server —
-targeted discovery, not a replay, and WITHOUT a scope gate: every test case in the document is
-walked on every run (each common flow once + every TC's unique tail; nothing is skipped, nothing
-is asked) — sets each TC's validation state with evidence (including what
-was actually observed for the expected result), corrects labels and missing steps, records
-potential bugs with a screenshot, updates the test-data statuses, and patches the same files in
-place (markdown, test-data file, re-rendered HTML page). Before or after human approval. It is
-NOT a gate: skills 4 and 5 accept a document that never went through it. 3b remains the default
-validator; this skill exists to be compared with it (references/cli-vs-mcp-comparison.md).
+WHAT IT DOES: Live validation of an existing test-case document in the RUNNING application through
+the Playwright command line (playwright-cli) — invoked by /speckit.implement once the implementation
+runs locally. Policy: constitution "Quality Control" article QC-8 and QC-18 (the `qa_standards`
+parameter names that file); this skill applies it and does not restate it. Targeted discovery, not
+a replay, and WITHOUT a scope gate: every test case in the document is walked on every run (each
+common flow once + every TC's unique tail; nothing is skipped, nothing is asked) — sets each TC's
+validation state with evidence (including what was actually observed for the expected result),
+corrects labels and missing steps, records potential bugs with a screenshot, updates the test-data
+statuses, and patches the same files in place (markdown, test-data file, re-rendered HTML page).
+A comparison with the retired MCP validator (3b) is no longer available.
 
 ============================================================
 INPUT — WHAT YOU MUST PROVIDE
@@ -24,39 +23,36 @@ ALWAYS REQUIRED:
                                              Status may be PENDING HUMAN REVIEW or APPROVED.
 
 PREREQUISITES (installed for you — the skill never installs anything itself):
-  - playwright-cli + its browser           — installed by `/sync-skills --tools` (or by
-                                             /link-qc-1-generate-update-testing-structure repair when you
-                                             answer yes to the playwright-cli question). Missing →
-                                             the skill stops BEFORE asking for anything (BLOCKED,
-                                             with that hint). It never falls back to the MCP server.
+  - playwright-cli + its browser           — installed by `/sync-skills --tools`. Missing → the
+                                             skill stops BEFORE asking for anything (BLOCKED, with
+                                             that hint — QC-17). It never falls back to the MCP
+                                             server.
   - .playwright-cli/ in .gitignore         — added by the same sync step (snapshots land there).
-  - OPTIONAL: a browser secrets file       — run skill 1's scripts/set-playwright-secrets.ps1 (or
-                                             .sh) ONCE in your own terminal if you want unattended
-                                             logins; it stores username / password pairs in a file
-                                             outside the repo and points PLAYWRIGHT_MCP_SECRETS_FILE
-                                             at it. Name each pair after the account ID the TCs
-                                             reference — A1_USER / A1_PASSWORD for "[A1]" — so the
-                                             skill can resolve "Login as Administrator [A1]" to
-                                             that account. The skill only ever types the secret
-                                             NAMES. Without it, you log in yourself (attended login).
+  - OPTIONAL: a browser secrets file       — a dotenv file OUTSIDE the repo holding username /
+                                             password pairs, pointed at by the user-level variable
+                                             PLAYWRIGHT_MCP_SECRETS_FILE (set it up ONCE in your
+                                             own terminal if you want unattended logins). Name
+                                             each pair after the account ID the TCs reference —
+                                             A1_USER / A1_PASSWORD for "[A1]" (the secret names of
+                                             QC-7 / the configuration table) — so the skill can
+                                             resolve "Login as Administrator [A1]" to that account.
+                                             The skill only ever types the secret NAMES. Without
+                                             it, you log in yourself (attended login).
 
 OPTIONAL FLAGS:
   (no scope flag)                There is no scope gate: every TC is walked on every run —
                                  each common flow once + every TC's unique tail, including
                                  TCs whose earlier evidence (this skill's or 3b's) is still
-                                 fresh. "--full" is accepted (it is already the behaviour, so
-                                 the 3b-vs-3c comparison can pass the same flag to both);
+                                 fresh. "--full" is accepted (it is already the behaviour);
                                  "--scope shared" / "--scope <ids>" are NOT supported — the
-                                 skill says so in one line and walks everything. For a
-                                 narrowed live check use skill 3b.
+                                 skill says so in one line and walks everything.
   --authorize-revision           On an APPROVED document: you already authorize the changes,
                                  so the skill patches without asking (Status becomes PENDING
                                  HUMAN REVIEW only if something actually changed).
-  --lang ar|en                   Language of the re-rendered review page (default: English —
-                                 never the document's "Review page language" line, a saved
-                                 answer or an existing Arabic sidecar; only this run's flag or
-                                 an explicit sentence switches it; the line is rewritten to
-                                 what this run rendered).
+  --lang ar|en                   Language of the re-rendered review page (default: English per
+                                 QC-13 — only this run's flag or an explicit sentence switches
+                                 it; the "Review page language" line is rewritten to what this
+                                 run rendered).
   --audit                        Probe playwright-cli and analyse the document only: reports
                                  the document state, the common flows, the executable set
                                  that a run would walk and what it would write. Writes
@@ -76,12 +72,12 @@ ASKED DURING THE RUN — ONE message, after the playwright-cli probe:
                                              continues (works with SSO / MFA); or
                                              B) secrets file: the skill types the secret NAMES
                                              A{n}_USER / A{n}_PASSWORD for account [A{n}] from
-                                             the file the setup script created. A password is
-                                             NEVER typed in chat or on a command line, and NEVER
-                                             written to any file by the skill.
+                                             the secrets file. A password is NEVER typed in chat
+                                             or on a command line, and NEVER written to any file
+                                             by the skill (QC-7).
   5. Is the story implemented?             — only when the document's header says
-                                             "not yet checked live"; the skill verifies live
-                                             either way
+                                             "not yet checked live" and the invoking command did
+                                             not pass it; the skill verifies live either way
   6. Environment notes                     — e.g. VPN, test tenant, build shown in the footer,
                                              "this is production" (then no data changes)
   7. May this run change data on {env}?    — yes: test cases whose Data effect is creates /
@@ -103,10 +99,10 @@ NOT ASKED (by design — this skill has no scope gate):
                                              message lists which TCs that were (current vs stale
                                              at intake).
 
-IF ANYTHING ELSE IS UNCLEAR: the skill searches the learning file and previous answers first, then
-asks with the gap, the affected TCs, the evidence, a recommended answer and its reason, the
-alternatives and what stays pending — and never acts on an unanswered recommendation. Your
-confirmed answers (never credentials) are saved under "CLI Validation Model (skill 3c)".
+IF ANYTHING ELSE IS UNCLEAR: policy QC-1 / QC-3 (evidence first, one batch with a recommended
+answer, nothing proceeds on an unanswered recommendation); the question shape is
+references/open-questions.md. Your confirmed answers (never credentials) are saved under
+"CLI Validation Model (skill 3c)".
 
 ============================================================
 OUTPUT — WHAT YOU GET (same folder, patched in place)
@@ -137,9 +133,6 @@ OUTPUT — WHAT YOU GET (same folder, patched in place)
                                  a new translation; an incomplete translation is delivered as a
                                  clearly marked PREVIEW
     evidence/PB-{n}-{date}.png <- one screenshot per potential bug (only for discrepancies)
-    comparison/               <- only when the 3b-vs-3c comparison protocol runs: the two runs'
-                                 output copies (3b-… / 3c-… prefixed) and
-                                 VALIDATION-COMPARISON-{feature}.md
     TC-GENERATION-SUMMARY.md  <- status / findings columns patched (multi-story only)
   Testing/project-learning.md <- base URL per environment (no credentials), login method used per
                                  environment (name only), common flows walked, labels, locale
@@ -147,23 +140,21 @@ OUTPUT — WHAT YOU GET (same folder, patched in place)
   Browser sessions the run opened are closed and the run's snapshot files under .playwright-cli/
   are deleted before the final message.
 
-  APPROVED document: validated READ-ONLY by default (report only, nothing written, approval and
-  ADO-MAP intact). With your authorization it is patched; Status becomes PENDING HUMAN REVIEW only
-  when something actually changed, and you are told to re-run skill 4 with --republish only when
-  an ADO-MAP.md exists for it.
+  APPROVED document: validated READ-ONLY by default (report only, nothing written, approval
+  intact). With your authorization (/speckit.implement passes --authorize-revision) it is
+  patched; Status becomes PENDING HUMAN REVIEW only when something actually changed, and the
+  invoking command restores APPROVED once its design-field diff is empty (QC-8).
 
 YOUR NEXT STEP: open the page; every TC the application let the skill reach carries a fresh state
-from this run; review "inferred" and "discrepancy" cards with extra care and the
-Potential Bugs (screenshots under evidence/); answer the open questions; then approve the markdown
-(or, if it was approved and changed, re-review and re-approve). Skills 4 and 5 run on the approved
-document as before.
+from this run; review "inferred" and "discrepancy" cards with extra care and the Potential Bugs
+(screenshots under evidence/); answer the open questions. What follows (design-field diff, status
+restore, defect fixes, automation) is the invoking command's procedure — QC-8, QC-18.
 
 COMMENTS: type in any comment box on the page, click "Save comments" (save
 REVIEW-COMMENTS-{feature}.md beside the page) or "Copy for chat", then say "read my comments".
 The next 3c run reads the open comments as hints for the walk and marks each one answered /
-declined with a one-line response. A change to a test case's design goes to skill 3 --revision.
+declined with a one-line response. A change to a test case's design goes to the test plan (QC-8),
+never to this skill.
 
-WHEN TO RUN: after skill 3, whenever the application is reachable — before approval, after
-approval, or again after a new build. Never required. Do not chain it with 3b on the same document
-while the comparison is running (references/cli-vs-mcp-comparison.md restores the files between
-the two runs).
+WHEN TO RUN: at /speckit.implement, once the implementation is complete and runnable — against the
+local instance first, then any configured environment — and again after a new build (QC-8, QC-18).

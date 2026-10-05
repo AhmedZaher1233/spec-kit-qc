@@ -2,17 +2,25 @@
 
 ## 0. Authorization check — before the first write
 
+> Policy: QC-8 — validation is authorised to patch the test-case file; the invoking command
+> passes `--authorize-revision` and restores `Status: APPROVED` after its design-field diff.
+> Mechanics:
+
 | Document | Write? |
 |---|---|
 | `Status: PENDING HUMAN REVIEW` | yes — patch in place |
-| `Status: APPROVED`, `--authorize-revision` given or authorized earlier in this run | yes — patch in place; if the patch changed anything, set `Status: PENDING HUMAN REVIEW`, say so, and add the `--republish` note only when `ADO-MAP.md` exists |
-| `Status: APPROVED`, no authorization yet, changes expected | ask ONCE (`intake.md` §3 shape) with the concrete list: which TCs change state, which steps get reworded, which PB / Q entries and data statuses would be written. "Yes" → patch. "No" or no answer → **READ-ONLY**: deliver the observation report (`## TEST CASES VALIDATED (read-only)`), write nothing, approval and `ADO-MAP.md` intact |
+| `Status: APPROVED`, `--authorize-revision` given or authorized earlier in this run | yes — patch in place; if the patch changed anything, set `Status: PENDING HUMAN REVIEW` and say so |
+| `Status: APPROVED`, no authorization yet, changes expected | ask ONCE (`intake.md` §3 shape) with the concrete list: which TCs change state, which steps get reworded, which PB / Q entries and data statuses would be written. "Yes" → patch. "No" or no answer → **READ-ONLY**: deliver the observation report (`## TEST CASES VALIDATED (read-only)`), write nothing, approval intact |
 | `Status: APPROVED`, nothing would change (every walked TC matched, no new PB / data fact) | no write needed; approval untouched; say so |
 
 Re-read the document immediately before patching — it may have changed since intake (a hash of
 the text at intake vs now; a difference → re-parse, redo the freshness pass for the affected TCs).
 
 ## 1. Freshness pass — earlier evidence is re-checked, never trusted blindly
+
+> Policy: QC-8 (validation is stale when the case, requirement, environment, build or a related
+> question changes; history is append-only) and QC-4 (a prior PASS never authorises changed
+> content). Mechanics:
 
 This skill skips nothing (`discovery-plan.md`): every TC is walked and re-stamped this run. The
 freshness pass still runs on every TC that carries a `<!-- tc-evidence -->` stamp, so the run can
@@ -21,7 +29,7 @@ this run (`walk-rules.md` §7) does not keep an outdated state:
 
 | Compare | Stale when |
 |---|---|
-| `content-sha256` vs sha256 of the current Preconditions + Steps + Expected Result | different — the TC was edited (skill 3 `--revision`, a reviewer, a merge) |
+| `content-sha256` vs sha256 of the current Preconditions + Steps + Expected Result | different — the TC was edited (a design revision at `/speckit.tasks`, a reviewer, a merge) |
 | `req-sha256` vs sha256 of the cited acceptance-criterion text read from the REQ / spec **now** | different — the requirement was rewritten while its ID stayed the same |
 | `env` vs the environment of this run | different — observed on another environment |
 | `build` vs the build the app shows now (when both known) | different — a new build may have changed the behaviour |
@@ -58,7 +66,7 @@ the freshness pass (§1) and before the first browser command:
    **a case not observed this run never counts as currently validated**, whoever observed it
    before. The structured return lists the TC-IDs under `**3b evidence at intake:**`.
 4. Nothing is kept from 3b, nothing is skipped, no question is asked and none is expected in the
-   task — an explicit "compare 3b and 3c" or "validate again" changes nothing here.
+   task — an explicit "validate again" changes nothing here.
 
 ## 2. `TEST-CASES-{feature}.md` — patch in place (`tc-format-contract.md`)
 
@@ -92,8 +100,8 @@ the freshness pass (§1) and before the first browser command:
    - **Actual result:** {what the application did}
    <!-- pb-meta: first-seen: {date}; last-checked: {date}; env: {name}; build: {version|unknown}; status: open | resolved {date} | not-checked-this-run; screenshot: evidence/PB-{n}-{date}.png -->
    ```
-   Rules: no technical analysis, no suspected cause, no extra detail. `PB-{n}` is allocated once
-   per (TC-ID + observed contradiction) and never reused. Re-observed this run → update the
+   Policy: QC-14 (the fixed five-line shape, no suspected cause or technical analysis, one
+   `PB-{n}` per TC-ID + contradiction, ids never reused). Mechanics: re-observed this run → update the
    entry in place (`last-checked`, `actual result` refreshed, a fresh screenshot under a new
    date — `browser-cli.md` §7) — never a second entry for the same bug. **Resolved only after an actual successful retest**: the reproduction steps were
    rerun this run and the requirement's expected result was confirmed → `status: resolved
@@ -104,7 +112,7 @@ the freshness pass (§1) and before the first browser command:
 5. **`## Open Questions`** — new `Q-{n}` entries in the `open-questions.md` shape; answered ones
    get `Status: answered {date}` + the answer.
 6. **`## Open Findings for the Human Reviewer`** — requirement / coverage gaps the walk revealed
-   (for skill 3 `--revision`), application defects (one line per PB: `TC-… — see PB-n`), pending
+   (for the test plan — QC-8), application defects (one line per PB: `TC-… — see PB-n`), pending
    implementation, environment blockers (unreachable screens, login failures, VPN), unclear
    requirements (one line per open Q). Add; never remove another skill's items.
 7. **Coverage tables** — untouched by validation alone (SKILL.md invariant 6). Recompute only
@@ -113,6 +121,9 @@ the freshness pass (§1) and before the first browser command:
 8. **Legacy document** — add only the header lines and sections your patch needs; say so.
 
 ## 3. `TEST-DATA-{feature}.md` — one read-only look per item, plus the advanced facts
+
+> Policy: QC-7 — READY / MISSING / IMPOSSIBLE / UNKNOWN are set only from evidence; preparation
+> order and the authorisation of API / database ways. Mechanics:
 
 For every data item the walk's screens can show (`## 2. Test data at a glance`), plan ONE
 read-only look at the listing screen (a targeted text / row lookup, shared across all TCs that
@@ -132,14 +143,13 @@ use the item — never create, edit or delete anything to find out):
 | a state the item must be in that the design did not name | same |
 | an additional account / role the screens require | §1 Accounts row with the next free `A{n}` ID (username only), mapped to the TCs; the inserted step references it as `{role} [A{n}]` |
 | the base URL or another environment value you asked for at intake (§0 row was `unknown — asked by 3b/3c`) | that row's `Value` + `Status: READY` — the TC keeps `[E{n}]`; a service the walk needed that had no row (a mail sandbox reached for an OTP) gets a new `E{n}` row, never a literal in a step |
-| a creation screen / setting that makes an `e2e scenario` or `set directly` way available | §5 row `available — seen live {date}`; never `api` / `db` from observation (those need confirmation, `tc-design.md` rules) |
+| a creation screen / setting that makes an `e2e scenario` or `set directly` way available | §5 row `available — seen live {date}`; never `api` / `db` from observation (those need confirmed availability and authorisation — QC-7) |
 | an item that cannot be reached or created in this environment | §4 Problems row, status `IMPOSSIBLE` only after the ways were considered |
 | a problem row now solved (item exists) | row marked `closed {date}` |
 
 Then recompute the header counts and set `Environment: {env} checked {date}`. Items confirmed
-`READY` that the learning file did not know → one `[type: data]` line under `## Test Data`.
-`MISSING` / `IMPOSSIBLE` / `UNKNOWN` statuses are NOT written to the learning file — skill 5
-records the final outcome.
+`READY` that the learning file did not know → one `[type: data]` line under `## Test Data`;
+`MISSING` / `IMPOSSIBLE` / `UNKNOWN` are not written there (QC-1).
 
 ## 4. Render the page — `html-page.md`
 
@@ -148,10 +158,8 @@ tables — fix the header, not the page; a `BLOCKED` names the markdown line to 
 `data-literal` / `data-ref-unresolved` warning on a line you patched means your patch broke the
 reference form — fix the step, never the page. Then `--write`.
 
-**Language.** *"The output language of a run is English unless this run's task input asks for
-another language (`--lang ar` or an explicit sentence). Nothing else decides it: not the source
-language, not a saved learning-file answer, not the document's `Review page language:` line, not
-an existing Arabic sidecar."* So: no `--lang ar` this run → English page, the `Review page
+**Language** (policy: QC-13 — run output is English unless this run's task input asks otherwise;
+nothing else decides it). Mechanics: no `--lang ar` this run → English page, the `Review page
 language:` line rewritten to `English`, and — when an Arabic sidecar is on disk — one sentence in
 the final message: "an Arabic sidecar exists — pass `--lang ar` to render it". `--lang ar` →
 `--lang ar --write-skeleton` (the merge keeps every unchanged translation; only your corrected
@@ -190,10 +198,11 @@ Never a credential, never a secret name paired with a value, never an unanswered
 7c. Housekeeping: "sessions closed" (`browser-cli.md` §2) and "snapshot files removed" (§8), and the
     gitignore warning when `.playwright-cli/` is not ignored.
 8. Open questions repeated with the recommended answer and what stays pending.
-9. Approved document that changed → now `PENDING HUMAN REVIEW`, re-review needed; `--republish`
-   only when `ADO-MAP.md` exists. Unchanged → still approved.
-10. Next: approve (or re-approve) → skills 4 (optional) and 5, independently; coverage gaps →
-    skill 3 `--revision`; a new build → re-run this skill (stale evidence is re-queued).
+9. Approved document that changed → now `PENDING HUMAN REVIEW` (the invoking command restores
+   `APPROVED` after its design-field diff — QC-8). Unchanged → still approved.
+10. Next: the invoking command's design-field diff and status restore, then defect fixes and
+    automation (QC-8, QC-18); coverage gaps → the test plan; a new build → re-run this skill
+    (stale evidence is re-queued).
 
 ## 7. Structured returns
 
@@ -237,7 +246,7 @@ Never a credential, never a secret name paired with a value, never an unanswered
 - [ ] ONE combined ask (URL only if not recorded, username + login method per role, implementation status only if unknown, env notes, data-changes permission, authorization only if approved and needed); every question in the `open-questions.md` shape; no unanswered recommendation acted on
 - [ ] No password in chat, on any command line, or in any file; secrets typed by NAME only, attended login otherwise; the substitution probe ran before relying on the secrets file
 - [ ] Document located and classified (pending / approved / re-validate / legacy / invalid); `tc_output_folder` stated once and unchanged
-- [ ] Approved document: read-only unless authorized; `Status` flipped only when something actually changed; `--republish` mentioned only when `ADO-MAP.md` exists
+- [ ] Approved document: read-only unless authorized; `Status` flipped only when something actually changed
 - [ ] Implementation status established live (probe + answer + report) and recorded with evidence; not-implemented TCs never marked validated, enhanced or as defects
 - [ ] Freshness pass run on every stamped TC; stale TCs reset with the reason and reported; nothing skipped on the strength of fresh evidence; history kept
 - [ ] 3b evidence noted per TC (current vs stale at intake), every such TC re-validated and its stamp replaced on observation, listed in the return; no question asked, nothing kept from 3b, nothing silently dropped
@@ -254,10 +263,10 @@ Never a credential, never a secret name paired with a value, never an unanswered
 - [ ] Every TC with a `[HUMAN]` step walked up to that step and stopped — `draft — not app-validated (human step pending)`, `outcome-check: human step pending`, marker untouched, listed under "Needs a human run"; never validated, never enhanced away
 - [ ] Page language English unless this run passed `--lang ar` / said so; `Review page language:` line rewritten to what was rendered; an Arabic sidecar on disk mentioned once, never used without the flag
 - [ ] Every discrepancy has a PB entry: five lines, stable id, requirement-based expected result copied not rewritten, meta with status; resolved only after a successful retest; not retested → "not checked in this run"
-- [ ] Gaps / defects / pending / blockers / unclear in five separate buckets; coverage gaps handed to skill 3, never fixed here
+- [ ] Gaps / defects / pending / blockers / unclear in five separate buckets; coverage gaps handed to the test plan (QC-8), never fixed here
 - [ ] Coverage score, traceability, manual-only tables untouched (or recomputed only for a recorded gap / authorized update, stated)
 - [ ] Test data: one read-only look per reachable item; statuses from evidence only (`MISSING` only when checked and absent); advanced facts written; counts and `Environment` line updated; `READY` items to the learning file
 - [ ] Page re-rendered by the script with `gate: PASS` (or MISMATCH fixed then PASS); Arabic complete or delivered explicitly as a preview with the outstanding keys; no hand edit
 - [ ] `node scripts/selftest.mjs` passes in this skill folder after any renderer / template change (mirror case 0 passes or `skipped`)
-- [ ] Learning file: base URL as `[type: env]`, flows / labels / locale / data / tricks in the shared sections, confirmed answers under Validation Model Q&A; no credentials, no code identifiers, no unanswered recommendation
-- [ ] Final message names the TC-IDs that ended unobserved with the application's reason, the PB ids, the open questions, the status outcome and the next step (approve → 5 optional and 6 independently)
+- [ ] Learning file: base URL as `[type: env]`, flows / labels / locale / data / tricks in the shared sections, confirmed answers under CLI Validation Model Q&A; no credentials, no code identifiers, no unanswered recommendation
+- [ ] Final message names the TC-IDs that ended unobserved with the application's reason, the PB ids, the open questions, the status outcome and the next step (the invoking command's diff, fixes and automation — QC-8)

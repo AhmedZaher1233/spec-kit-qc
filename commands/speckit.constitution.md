@@ -11,7 +11,7 @@ Runs after the constitution has been written above. Scope: the Quality Control a
 configuration and the two QC project files only. No feature artifacts, no application code.
 
 1. **Keep the article.** Confirm `.specify/memory/constitution.md` contains the `## Quality Control`
-   article (QC-0 … QC-18 and the "QC project configuration" table) from the resolved template. If a
+   article (QC-0 … QC-18 and the "QC project configuration" table) and the `## Development` placeholder article from the resolved template. The Development article is owned by the development team: never fill its DEV-1 … DEV-7 rows from QC input; leave them for the developers and report them as open items. If a
    previous constitution version held a QC article with different wording, merge: rules from the
    template win, project values from the live file are preserved.
 2. **Fill the configuration table.** For every `[ ]` row, use in this order: the user's input →

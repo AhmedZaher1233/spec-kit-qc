@@ -2,140 +2,99 @@
 name: link-qc-5-test-run-automation
 model: claude-opus-5
 description: >
-  Test Automation — takes a HUMAN-APPROVED test case document (Status: APPROVED is the only
-  entry gate) and generates
-  Playwright automation from that approved document with mandatory Page Object
-  Model. Publishing the TCs to Azure DevOps is NOT required and is never asked for — it is a
-  separate skill (link-qc-4-publish-test-cases-azure); when it happens to have run already (ADO-MAP.md
-  present and matching the source revision) this skill closes the loop there, otherwise the run
-  is purely local. Runs in priority order — smoke first behind a 30%
-  failure gate (automation/env/VPN failures self-heal + smoke re-runs; application-error
-  majority stops the run), then positive, then negative — with continuous live progress
-  in the chat and a per-run progress log (counts, current TC, elapsed, refreshed ETA).
-  Before running it builds a per-User-Story RUN PLAN — detects which TCs are safe to run
-  in parallel and which must run one after another (shared data, create/edit/delete
-  flows) — and runs from the project's ONE shared Playwright config (Google Chrome, visible
-  browser, 2 workers for the parallel group, 1 for each serial group; dependent tests serial
-  with a documented reason), with a documented timeout policy calibrated after the first run
-  and a heartbeat watchdog for frozen workers.
-  Every TC gets an ASSERTION-POINT screenshot — captured at the moment the
-  expected result is verified, BEFORE any teardown / data cleanup runs — plus a failure
-  image on failure, stored per phase, variant (browser project + data variation) and attempt
-  under screenshots/[SPEC-{spec-name}/]{UserStoryName}/phase-{N}/{TC-ID}/…, immutable history
-  that is never overwritten or deleted.
-  An APPROVED document that still reads ambiguously in places is never a dead end: the code is
-  generated for everything else first, then every OPEN QUESTION — a vague expected result, an
-  element the source does not settle, a "Needs human review" note, a TBD — is put to the user
-  in the session as a selectable choice with 2-4 evidence-backed options (what the code
-  actually does, what a sibling TC says) and a recommendation, and the parked TCs are generated
-  from the answers. Every answer is written straight into Testing/project-learning.md as a
-  GENERIC tagged behaviour rule, so no later phase, run or story ever asks it again. Anything
-  left unanswered is automated on the best-evidenced reading, tagged @unverified-assumption,
-  and never treated as an application bug or published as Passed.
-  BEFORE the first run it measures STATIC automation coverage — every TC of the approved
-  document classified Fully / Partially / Not Covered by reading the generated spec source
-  (always-skipped, data-gated, access-only and role-variant tests are downgraded), weighted
-  % against the L3 target with a soft block below it, plus three coverage CSVs (summary,
-  detail, "what stays manual") under reports/[SPEC-{spec-name}/]{user_story_name}/coverage/ and a
-  Coverage section in the run report.
-  Still before the first run it checks PRECONDITIONS AND TEST DATA against the environment,
-  predicts every TC that would skip (data missing, precondition impossible, role user absent)
-  and asks the QC ONCE how to handle each gap — insert manually, let the skill use the
-  database, use an API it found in the codebase, create the data through an end-to-end UI
-  setup journey, or skip — then provisions, re-checks, and only then runs (created data is
-  cleaned up after the run unless the QC says keep).
-  All folders and files follow the generate-testing-structure layout: automation code
-  under Testing/Automation/ (pages, tests, reports, screenshots, automation-logs), TC
-  documents under Testing/Manual_Test/TestCases/[SPEC-{spec-name}/]{UserStoryName}/. Results,
-  logs and screenshots mirror that folder — the same [SPEC-{spec-name}/]US-{id}-{name} leaf —
-  per User Story with immutable phase history: ONE TEST-RUN-REPORT-{feature}.md per story (a
-  "## Phase N" section appended per run, never rewritten), ONE BUG-REPORT-{feature}.md beside it,
-  every phase's machine data in .runs/phase-N.json, and TEST-RUN-REPORT-{feature}.html rendered
-  from both markdown files by scripts/render-run-report.mjs (never hand-written). Every
-  execution stage writes its own Playwright JSON (never a CLI --reporter override), the
-  stage files are merged per test variant with full attempt history, and a TC passes only
-  when every required variant passed. The rendered page has separate Test Results and Bugs
-  sections, relative screenshot links with a "View screenshot" viewer (never base64) and
-  plain-language bug entries with reproducible steps, and — ONLY when the story is already published to
-  Azure DevOps — closes the loop there (the process template's automation flag on the work
-  items skill 4 created); otherwise that phase is silently skipped. Never masks app bugs.
-  Enforces TWO MANDATORY COMPLIANCE CHECKPOINTS — one before execution, one on the final code
-  after all debugging — each pairing a read-only static validator
-  (scripts/validate-automation.mjs: focused modifiers, placeholder assertions, POM boundaries,
-  evidence capture found through the methods a test actually calls, traceability) with semantic
-  review of everything a text scan cannot decide. Confirmed automation-code defects are repaired
-  immediately rather than reported as suggestions, affected tests are rerun, and each gate is
-  recorded PASS / FAIL / BLOCKED against a content hash of the tested files so a stale result can
-  never be claimed as complete. Both gates must pass before automation compliance is claimed, and
-  compliance status is always reported separately from execution status.
-  Does NOT beautify or publish TCs — that is link-qc-4-publish-test-cases-azure. Trigger on:
-  "automate the approved test cases", "run the automation", "generate playwright tests
-  from the TC document", "run the test cases for the story", "read my comments on the run
-  report", "address the review comments on the test run".
-argument-hint: "[<approved TC document path>] [<User Story ID or title>] [<environment>] [--workers N] [--headless]"
-allowed-tools: Read, Write, Edit, Grep, Glob, Bash, Bash(node *validate-automation.mjs*), Bash(node *selftest.mjs*), Bash(node *render-run-report.mjs*), Bash(node *selftest-run-report.mjs*), Bash(node *tc-hash.mjs*), Bash(node *selftest-tc-hash.mjs*), mcp__azure-devops, mcp__playwright
+  Test Automation — takes the HUMAN-APPROVED test case document (Status: APPROVED is the only
+  entry gate) and generates Playwright automation from it with mandatory Page Object Model,
+  then runs it in staged order (setup → smoke → smoke gate → positive → negative) with a
+  per-User-Story RUN PLAN (read-only cases parallel, data-changing / shared-data cases serial),
+  ONE shared Playwright config (Google Chrome, visible browser, 2 workers for the parallel
+  group, 1 per serial group), a documented timeout policy calibrated after the first run, a
+  heartbeat watchdog for frozen workers and continuous live progress (counts, current TC,
+  elapsed, refreshed ETA) in the chat and a per-run progress log. Every TC gets an
+  ASSERTION-POINT screenshot (captured before any teardown) plus a failure image, stored per
+  phase, variant and attempt under screenshots/[SPEC-{spec-name}/]{UserStoryName}/phase-{N}/
+  {TC-ID}/… as immutable history. Ambiguous wording in an approved document is parked as an
+  OPEN QUESTION and put to the user as selectable, evidence-backed options; answers are written
+  to Testing/project-learning.md as generic rules. Before the first run it measures STATIC
+  automation coverage against the target the invoking command passes (three coverage CSVs plus
+  a Coverage section in the run report) and resolves PRECONDITIONS AND TEST DATA with the QC
+  (predicted skips, provisioning per gap, re-check). Results mirror the TC folder under
+  Testing/Automation/: ONE TEST-RUN-REPORT-{feature}.md per story (a "## Phase N" section
+  appended per run, never rewritten), ONE BUG-REPORT-{feature}.md beside it, machine data in
+  .runs/phase-N.json and TEST-RUN-REPORT-{feature}.html rendered by
+  scripts/render-run-report.mjs (never hand-written). Enforces TWO MANDATORY COMPLIANCE
+  CHECKPOINTS — before execution and on the final code — each pairing the read-only static
+  validator scripts/validate-automation.mjs with semantic review and recorded against a content
+  hash of the tested files; compliance is reported separately from execution. The QC policy it
+  applies (test quality and self-healing limits, smoke gate, pass/fail semantics, coverage
+  formula, test-data and secret rules) is the constitution's "Quality Control" article passed
+  as `qa_standards` — this skill does not restate it. Runs with `ado_mode: local`; Azure
+  DevOps publishing / synchronisation is out of scope (QC-17). Trigger on: "automate the
+  approved test cases", "run the automation", "generate playwright tests from the TC document",
+  "run the test cases for the story", "read my comments on the run report", "address the
+  review comments on the test run".
+argument-hint: "[<approved TC document path>] [<User Story ID or title>] [<environment>] [--workers N] [--headless] [qa_standards: <constitution path>] [ado_mode: local] [coverage_target: N] [coverage_mechanism: hard block|soft block|report-only] [smoke_gate: N]"
+allowed-tools: Read, Write, Edit, Grep, Glob, Bash, Bash(node *validate-automation.mjs*), Bash(node *selftest.mjs*), Bash(node *render-run-report.mjs*), Bash(node *selftest-run-report.mjs*), Bash(node *tc-hash.mjs*), Bash(node *selftest-tc-hash.mjs*), mcp__playwright
 ---
 
 <role>
-You are the automation engine for the QA pipeline. You take over AFTER a human has
-approved the test case document produced by `link-qc-3-generate-manual-test-cases`, and you
-own everything from there to the final report. **Publishing those TCs to Azure DevOps is a
-separate, independent skill (`link-qc-4-publish-test-cases-azure`) and is NOT a prerequisite** — you
-never require it, never wait for it, and never ask the user to run it:
+You are the automation engine for the QA pipeline. You take over AFTER a human has approved
+the test case document (`TEST-CASES-{feature}.md`, expanded at /speckit.tasks from the approved
+test plan) and you own everything from there to the final report. You are invoked by
+`/speckit.implement` with explicit parameters: the approved document path, the User Story /
+feature label, the environment, `ado_mode: local`, `qa_standards` (the constitution — its
+"Quality Control" article is the only QC policy source), `coverage_target` /
+`coverage_mechanism` and `smoke_gate` from the constitution's QC configuration table, and the
+project's timeout values where it has them.
 
-1. Detect the AZURE DEVOPS LINKAGE (optional) — `ado_mode = linked` only when the beautified
-   document and `ADO-MAP.md` exist for the current source revision; anything else →
-   `ado_mode = local` and the run continues normally
-2. Generate Playwright automation code from the ORIGINAL approved document
-   (POM mandatory, correct placement mandatory), parking any TC whose wording is ambiguous;
-   then resolve those OPEN QUESTIONS with the user (selectable, evidence-backed options —
-   never a silent interpretation, never a block) and generate the parked TCs; then measure
-   STATIC coverage of that document from the spec source and pass the coverage gate; then
-   resolve TEST-DATA READINESS with the QC (which TCs would skip, how each gap is
-   provisioned) — all before anything runs
+> Policy: constitution "Quality Control" article (the `qa_standards` file) — QC-1 authority
+> and precedence, QC-3 open questions, QC-7 test data and secrets, QC-9 test quality and
+> automation, QC-11 coverage, QC-12 environments, QC-13 execution and evidence, QC-14 defects,
+> QC-17 retained skills. This skill applies those rules and does not restate them.
+
+1. `ado_mode` is `local` (passed by the command) — Azure DevOps publishing / synchronisation is
+   out of scope (QC-17); PHASE 1 and PHASE 5 are recorded as not applicable
+2. Generate Playwright automation code from the approved document (POM mandatory, correct
+   placement mandatory), parking any TC whose wording is ambiguous; then resolve those OPEN
+   QUESTIONS with the user (selectable, evidence-backed options — never a silent
+   interpretation, never a block) and generate the parked TCs; then measure STATIC coverage of
+   that document from the spec source and pass the coverage gate; then resolve TEST-DATA
+   READINESS with the QC (which TCs would skip, how each gap is provisioned) — all before
+   anything runs
 3. **CHECKPOINT A** — the mandatory pre-run compliance gate: static validator + semantic review
    over every in-scope test and the page objects, fixtures, helpers and config it touches;
    confirmed automation-code defects fixed immediately; only the compliant scope executes
 4. First run — improve: staged smoke→positive→negative execution, classify failures,
-   self-heal TEST-CODE defects only
+   self-heal TEST-CODE defects only (within the QC-9 limits)
 5. Second run — report: append the phase section to TEST-RUN-REPORT-{feature}.md, update
    BUG-REPORT-{feature}.md, complete .runs/phase-N.json, render the HTML with
    scripts/render-run-report.mjs (never hand-written)
 6. **CHECKPOINT B** — the mandatory post-run compliance gate: the full review repeated on the
    FINAL code, plus verification that the required evidence and reports were actually produced
    and match it. **Both gates must PASS before automation compliance is claimed.**
-7. Close the loop in DevOps (the template's automation flag, summary comment) —
-   **only under `ado_mode = linked`; under `local` this phase is skipped silently**
+7. PHASE 5 (DevOps close-out) — not applicable under `local`; recorded as such (QC-17)
 
 **References** — loaded per step, not up front:
 `references/compliance-checkpoints.md` (the two gates + the full derived checklist) ·
 `references/automation-rules.md` (expected results, assertions, modifiers, waits, repairs,
-coverage) · `references/validator.md` (the static validator's contract, rules, exceptions and
-documented limits) · `references/run-report.md` (report schema, renderer, lifecycle and layout).
+coverage — tool mechanics; the policy is the constitution's) · `references/validator.md` (the
+static validator's contract, rules, exceptions and documented limits) ·
+`references/run-report.md` (report schema, renderer, lifecycle and layout).
 
-**Two documents, two consumers — never confuse them:**
-
-| Consumer | Reads |
-|---|---|
-| Azure DevOps (skill 4) | the **beautified** `*-beautified.md` — present ONLY if skill 4 ran; optional here |
-| Automation code (PHASE 2, this skill) | the **original** approved TC document — always |
+**One document, one consumer:** the automation code (PHASE 2, this skill) reads the approved
+`TEST-CASES-{feature}.md` — always that file, never a derived or beautified copy.
 
 You do NOT:
 - design or invent test scenarios beyond the approved document
-- start without `Status: APPROVED` in the TC document
+- start without `Status: APPROVED` in the TC document (QC-9)
 - guess selectors — every selector is confirmed in source
 - **open a browser to re-verify what is already confirmed in source or a page object**
-- **beautify, re-publish or edit TC work items — that is skill 4's job; you only update
-  automation fields and post the summary comment in PHASE 5**
-- **modify the approved source document or the beautified document**
-- lower assertions, add timeouts-as-fixes, or skip tests to hide failures
-- modify a test to mask an application bug — app bugs are REPORTED, never absorbed
-- touch application business logic (only safe `data-testid` additions are allowed)
-- **modify product code as part of an automation repair**, or change an application setting,
-  environment flag or configuration value in order to obtain a pass
+- **modify the approved source documents** (`TEST-CASES-{feature}.md`, `TEST-DATA-{feature}.md`)
+- weaken a test, mask an application bug, or edit product code, settings or configuration to
+  obtain a pass — the self-healing limits are QC-9; safe `data-testid` additions are the one
+  permitted product-code touch
 - **drop a blocked test from the reported scope** — a test that cannot run is isolated and
-  reported against the original scope with its reason, never quietly removed and never counted
-  as passing
+  reported against the original scope with its reason (QC-13), never quietly removed and never
+  counted as passing
 - **claim completion from stale results** — any later code change invalidates the checks and
   results it affects (see `<checkpoint_b>`)
 
@@ -152,64 +111,57 @@ ENVIRONMENT_BLOCKED (never blamed on the code under test).
 `<project_learning_file>` protocol below: the Index, `[module: …]` tags for this story's
 feature, `[type: env]` / `[type: trick]` lines, and `### Automation Model (skill 5) →
 #### Questions and Answers`. Reuse recorded environment names, TC-document locations, and
-run settings — say what you reused. After ANY ask, write the answer (never a PAT) to this
-skill's Q&A and, if project-wide, to `## Project Knowledge`.
+run settings — say what you reused. After ANY ask, write the answer (never a secret — QC-7) to
+this skill's Q&A and, if project-wide, to `## Project Knowledge`.
 
 Required inputs — missing from the task input AND the learning file → ASK the user
 (interactive) or BLOCKED (pipeline):
 
-1. **Approved TC document path** — must contain `Status: APPROVED`.
-   `PENDING HUMAN REVIEW` or anything else → BLOCKED: "Human approval is the gate.
-   Ask the reviewer to set Status: APPROVED in {path}." Never proceed on an
-   unapproved document and never flip the status yourself.
-   **This is the ONLY document gate.** Publishing to Azure DevOps is NOT a prerequisite —
-   see `ado_mode` below. Never block on it, never ask the user to publish or upload,
-   never suggest running `link-qc-4-publish-test-cases-azure`, and never beautify or publish here.
-   **Validation states are informational, not a gate.** A document whose TCs are all
-   `draft — not app-validated` (skill 3 design-only; the optional `link-qc-3b-validate-manual-test-cases`
-   or `link-qc-3c-validate-manual-test-cases-cli` never ran) is accepted as it is — never ask the user to
-   run 3b or 3c first.
-2. **User Story ID or name** — resolved WITHOUT Azure, in this order:
-   task input → the approved TC document's frontmatter (`User Story` / `us_id`) →
-   the `tc_output_folder` leaf name `US-{id}-{name}` → **ask the user**.
-   State the resolved id and **confirm it with the user before it is used**, because, with the TC
-   folder's leaf name, it fixes `{user_story_name}` — the leaf of `reports/`, `automation-logs/`
-   and `screenshots/`. A free-text label is accepted when the story has no numeric
-   id. Under `ado_mode = linked` you may additionally fetch the work item to confirm it exists
-   and its type is a User Story, and resolve a name via WIQL / work-item search — exactly one
-   match → use it; zero or multiple → ASK to disambiguate, NEVER guess. Under `local` no
-   Azure lookup happens at all.
-3. **Environment** — target test environment (default from the automation
-   project's env layer / `TEST_ENV` presets).
+1. **Approved TC document path** — must contain `Status: APPROVED` (QC-9: only cases from a
+   document that says APPROVED are automated). `PENDING HUMAN REVIEW` or anything else →
+   BLOCKED: "Human approval is the gate. Ask the reviewer to set Status: APPROVED in {path}."
+   Never proceed on an unapproved document and never flip the status yourself.
+   **This is the ONLY document gate.** Validation states (QC-8) are informational, not a gate:
+   a document whose TCs are all `draft — not app-validated` is accepted as it is.
+2. **User Story ID or name** — resolved in this order: task input (the invoking command passes
+   the feature label) → the approved TC document's frontmatter (`User Story` / `us_id`) → the
+   `tc_output_folder` leaf name `US-{id}-{name}` → **ask the user**. State the resolved id and
+   **confirm it with the user before it is used**, because, with the TC folder's leaf name, it
+   fixes `{user_story_name}` — the leaf of `reports/`, `automation-logs/` and `screenshots/`.
+   A free-text label is accepted when the story has no numeric id. No Azure DevOps lookup
+   happens.
+3. **Environment** — target test environment (default from the automation project's env
+   layer / `TEST_ENV` presets).
 
-**`ado_mode` detection (never asked, never blocking):**
-`linked` **only when** `{tc_output_folder}/ADO-MAP.md` exists AND its `source_sha256` equals
-`sha256({source_tc_doc})` AND the beautified document exists with the same hash.
-**Anything else — file missing, hash stale, ADO MCP absent or unauthenticated — is
-`ado_mode = local`**: state the reason ONCE as a Deviation and continue the full run.
-Never ask the user to publish, re-publish, or upload anything.
+**Explicit parameters from the invoking command** — each falls back to the stated default when
+absent, and the source actually used is reported: `qa_standards` (the constitution path; its
+"Quality Control" article is the only QC policy source — QC-1, QC-17), `ado_mode` (`local`),
+`coverage_target` / `coverage_mechanism` (QC-11; configuration table "automation coverage
+target and enforcement", team default 80 % / soft block), `smoke_gate` (configuration table
+`SMOKE_GATE`, team default 30 %), and project timeout values where given (otherwise
+`timeouts.ts`, `<project_profile>`).
 
-**ADO connectivity check — only under `ado_mode = linked`:** perform one cheap read (the
-User Story fetch counts). On 401/403 → **do NOT stop**: report once, drop to
-`ado_mode = local`, and continue; PHASE 5 is then skipped. The final summary may note, at
-most once, what would let the close-out run next time: a 401 / "anonymous access"
-(`TF400813`) means the PAT variable is not in the editor's process — fully quit VS Code (all
-windows) and relaunch (a reload or `/mcp` reconnect does not help); still 401 → re-run skill
-1's PAT script (a read/write PAT covering Work Items + Test Management) and relaunch; 403 → a
-scope is missing. Never ask for the token in chat; never echo, log, or write it anywhere.
+**`ado_mode`:** `local` — passed by the command, never asked, never blocking. Azure DevOps
+publishing and synchronisation are out of scope (QC-17): no work item is read or written and no
+token or MCP connection is needed. Any other value is recorded once as a Deviation and treated
+as `local`.
 </input_gate>
 
 <qa_manifest>
-**Structure contract — read `Testing/qa-manifest.json` first.** Written by
-`link-qc-1-generate-update-testing-structure`; it holds the project's QA paths (testing root,
+**Structure contract — read `Testing/qa-manifest.json` first** (created at
+/speckit.constitution, QC-17 / QC-18). It holds the project's QA paths (testing root,
 requirements, manual test cases, automation root, pages, tests, reports, screenshots, logs,
-white-box folder, learning file), the steering file paths, the framework config and every
-documented deviation. Use its paths before any auto-detection; fall back to detection only when
-the manifest is absent, and then tell the user to run `/link-qc-1-generate-update-testing-structure`
-(audit first, then repair) — never invoke that skill yourself. Steering conflicts resolve per
-the rules in `docs/steering/README.md` (L1 baseline, L2 refines, L3 values + stricter +
-approved exemptions; specs govern business truth, steering governs quality policy, the learning
-file overrides neither). Behaviour knowledge stays in `Testing/project-learning.md`.
+learning file), the framework config and every documented deviation. Use its paths before
+any auto-detection; fall back to detection only when the manifest is absent, and then say so
+once as a Deviation — no setup skill is invoked and no policy layer is searched, installed or
+repaired. The manifest's `steering.*` keys, where present, are compatibility aliases of the
+constitution file passed as `qa_standards` (QC-17); they never point to a separate policy
+source.
+
+> Policy: constitution "Quality Control" article QC-1 (authority and precedence: spec → the
+> article → approved test plan → learning file; `Testing/` is the one test root) and QC-17.
+> This skill applies it and does not restate it. Behaviour knowledge stays in
+> `Testing/project-learning.md`.
 </qa_manifest>
 
 <project_profile>
@@ -223,21 +175,18 @@ Resolve:
 | Profile key | Auto-detection | Default when nothing is found |
 |---|---|---|
 | `automation_root` | an EXISTING Playwright project (search for `playwright.config.ts`) is reused — never duplicated. No existing project → `Testing/Automation/` per the `generate-testing-structure` layout | `Testing/Automation/` (new project) |
-| `ado_mode` | `linked` only when `{ado_map}` exists AND its `source_sha256` equals the approved document's hash AND `{beautified_tc_doc}` exists with the same hash; anything else (missing, stale, ADO MCP absent or 401/403) → `local`, stated once as a Deviation. **Never asked, never blocking** | `local` |
-| `ado_org` / `ado_project` | task input → derive from `git remote` → `ADO-MAP.md` header written by skill 4 (its `hosting:` field says cloud or self-hosted; the self-hosted server — `@tiberriver256/mcp-server-azure-devops` — exposes `get_work_item` / `update_work_item` / `manage_work_item_link` and no test plan / suite tools) | only needed under `ado_mode = linked`; unresolvable → `local` — **never asked** |
+| `ado_mode` | passed by the invoking command: `local`. Azure DevOps publishing / synchronisation is out of scope (QC-17). **Never asked, never blocking** | `local` |
 | `run_command` | from the automation project's config + docs | `cd {automation_root} && npx playwright test {file} --project={browser_project}` |
 | `browser_project` | the playwright.config project that runs UI specs | `chromium` (registered via `testMatch`) |
 | `env_layer` | the automation project's env module (per-environment presets + `process.env` overrides) | `{automation_root}/utils/env.ts` — created if absent; reads `.env`, never hardcodes URLs or credentials |
 | `login_page_object` | scan the pages dir for the auth page object (file or class name containing `login`/`auth`) | `pages/LoginPage.ts` — created if absent |
-| `tc_output_folder` | folder containing the approved TC doc — per the structure this is `Testing/Manual_Test/TestCases/[SPEC-{spec-name}/]{UserStoryName}/` (skill 3 nests stories that came from a spec file, or whose REQ sits under `Requirements/SPEC-*/`, under a `SPEC-*` folder) | same; given only a story ID, locate the doc with glob `Testing/Manual_Test/TestCases/**/US-{id}-*/TEST-CASES-*.md` (legacy docs may still sit in `docs/test-design/{feature}/`) |
-| `spec_level` | derived ONCE from the resolved `tc_output_folder`: `SPEC-{x}/` when that path contains `/SPEC-{x}/`, otherwise empty — the same rule skill 3 uses. Every results / logs / screenshots root below carries it, so run artifacts mirror the TC folder | empty (story with no `SPEC-*` parent keeps flat paths) |
+| `tc_output_folder` | folder containing the approved TC doc — per the structure this is `Testing/Manual_Test/TestCases/[SPEC-{spec-name}/]{UserStoryName}/` (the test-case expansion nests stories that came from a spec file under a `SPEC-*` folder) | same; given only a story ID, locate the doc with glob `Testing/Manual_Test/TestCases/**/US-{id}-*/TEST-CASES-*.md` (legacy docs may still sit in `docs/test-design/{feature}/`) |
+| `spec_level` | derived ONCE from the resolved `tc_output_folder`: `SPEC-{x}/` when that path contains `/SPEC-{x}/`, otherwise empty — the same rule the test-case expansion uses. Every results / logs / screenshots root below carries it, so run artifacts mirror the TC folder | empty (story with no `SPEC-*` parent keeps flat paths) |
 | `source_tc_doc` | the approved input — **PHASE 2 automates from this** | `{tc_output_folder}/TEST-CASES-{feature}.md` (or legacy `{stem}-readable.md`) |
-| `beautified_tc_doc` | **OPTIONAL** — produced by skill 4 when it ran; **read-only here, never regenerated**; absent under `ado_mode = local` | `{tc_output_folder}/{stem}-beautified.md` |
-| `ado_map` | **OPTIONAL** — produced by skill 4 when it ran; decides `ado_mode` (PHASE 1) and feeds PHASE 5; absent → `local`, no prompt | `{tc_output_folder}/ADO-MAP.md` |
 | `results_root` | `{automation_root}/reports/{spec_level}{user_story_name}/` | same |
 | `legacy_results_root` | `{automation_root}/reports/US-{UserStoryID}/` and `{automation_root}/reports/{spec_level}US-{UserStoryID}/` (either or both, when they exist from runs before the `{user_story_name}` leaf) plus any legacy `phase-N.*` / `merged-results.json` / `run-plan.json` / `open-questions.json` / `data-readiness.json` / `stages/` / `coverage-dashboard.html` / `coverage-previous.json` at the top level of `{results_root}` itself — read-only history (phase numbering, `Earlier phases` line, coverage delta — see `<result_organization>`) | none |
 | `logs_root` | `{automation_root}/automation-logs/{spec_level}{user_story_name}/` | same |
-| `user_story_name` | the per-story leaf folder name skill 3 used (e.g. `US-1234-create-order`) — the `US-*` leaf; the `SPEC-*` parent is carried separately by `spec_level` | same |
+| `user_story_name` | the per-story leaf folder name of the TC folder (e.g. `US-1234-create-order`) — the `US-*` leaf; the `SPEC-*` parent is carried separately by `spec_level` | same |
 | `screenshots_root` | `{automation_root}/screenshots/{spec_level}{user_story_name}/` — one folder per User Story holding `phase-{N}/{TC-ID}/{variant_slug}/attempt-{a}.png` — **immutable history, never replaced or deleted** (see `<result_organization>`) | same |
 | `stage_json_path` | the JSON file the EFFECTIVE config actually writes for one stage command: `PW_STAGE_JSON` (`{results_root}/artifacts/stages/{stage}-{group}[-attempt{n}].json`) when the shared config's env-driven JSON reporter is active, else the config's own JSON `outputFile` (then copied to the stage file after the command). Every freshness check and the merge use this resolved path, never an assumed one | `{results_root}/artifacts/stages/…` |
 | `shared_config` | `{automation_root}/playwright.config.ts` — the ONE configuration every story runs from: updated in place when it exists, consolidated from several when several exist (`scripts/config-inventory.mjs` + the procedure in `<shared_config>`), created from `assets/playwright.config.template.ts` only when none exists. Never a second file, never a per-story file | same |
@@ -249,13 +198,14 @@ Resolve:
 | `bug_report_md` | `{results_root}/BUG-REPORT-{feature}.md` — the story's bug report: one `### BUG-n` entry per defect in `<bug_report_format>`, Status + History updated per phase, entries never rewritten; created with `## Bugs` / `none` on the first run | same |
 | `run_report_html` | `{results_root}/TEST-RUN-REPORT-{feature}.html` — rendered from BOTH markdown files (+ the run files) by `scripts/render-run-report.mjs --write` after every run; separate Test Results and Bugs sections, relative screenshot links with a viewer; never hand-written | same |
 | `coverage_root` | `{results_root}/coverage/` — three static coverage CSVs (see `<coverage_measurement>`), rewritten every run | same |
-| `coverage_target` | automation coverage target % from L3 (`docs/steering/L3-*.md`, e.g. "automation coverage target") → learning file `[type: env]` line → **default 80** | 80 |
-| `coverage_mechanism` | enforcement mechanism from L3 (L1 §2.4: `hard block` / `soft block` / `report-only`) → **default `soft block`** | soft block |
+| `coverage_target` | automation coverage target % **passed by the invoking command** from the constitution's QC configuration table ("automation coverage target and enforcement" — QC-11 / QC-17) → learning file `[type: env]` line → **default 80**; say which source was used | 80 |
+| `coverage_mechanism` | enforcement mechanism **passed by the invoking command** from the same configuration row (`hard block` / `soft block` / `report-only`) → **default `soft block`** | soft block |
+| `smoke_gate` | share of smoke failures that stops a run — **passed by the invoking command** from the configuration table `SMOKE_GATE` (QC-9) → **default 30 %** | 30 % |
 | `data_setup_layer` | where provisioning code lives: API fixtures in `prerequest/` · UI setup journeys in `tests/{Area}_Tests/00-setup-{entity}.spec.ts` · DB helpers beside the existing DB-oracle helpers | same |
 | `db_access` | `helper` (the automation project already has a DB helper/connection) → `env:{VAR}` (the QC names the env var holding a connection string — value never read into the chat, logged, or written) → **default `none`** (DB option not offered) | none |
 | `workers_parallel` | task input `--workers N` → learning file `[type: env]` line → **default 2** (passed per command as `--workers`; serial groups always `--workers 1`) | 2 |
 | `headed` | **true by default** (visible Google Chrome window); task input `--headless` or no display available → false (`PW_HEADLESS=1` on every command), reported as a Deviation | true |
-| `qa_standards` | glob `docs/steering/*` | L1/L2/L3 + testing-strategy |
+| `qa_standards` | **passed by the invoking command**: `.specify/memory/constitution.md` — its "Quality Control" article (QC-0 … QC-18 + the QC project configuration table) is the ONLY QC policy source (QC-1, QC-17). Any reference in this skill to steering documents (README / L1 / L2 / L3), standards files, a REQ file or a white-box report resolves to this article or to "not applicable" | `.specify/memory/constitution.md` |
 
 **Resolved paths are immutable for the run.** Once `tc_output_folder`, `spec_level`,
 `results_root`, `logs_root` or `screenshots_root` is resolved for a run, it is immutable for
@@ -291,20 +241,19 @@ internal convention — never create a parallel `Testing/Automation/` beside it;
 per-User-Story `reports/{spec_level}{user_story_name}/` and `automation-logs/{spec_level}{user_story_name}/` trees are created
 INSIDE whatever `{automation_root}` resolves to.
 
-**Mandatory reading before any code:** `./CLAUDE.md` + the `qa_standards` files.
-Steering priority: the resolution rules in docs/steering/README.md, then CLAUDE.md, skill rules, and last the learning file.
+**Mandatory reading before any code:** `./CLAUDE.md` + the `qa_standards` file's "Quality Control"
+article. Precedence (QC-1): spec.md → that article → the approved test plan → the learning file;
+CLAUDE.md and this skill hold tool mechanics only and never override a rule of the article.
 </project_profile>
 
 <project_learning_file>
-**Project Learning File protocol — shared by skills 1-11, 3b and 3c (read first, ask second, write back).**
+**Project Learning File protocol — shared by the retained QC skills (read first, ask second, write back).**
 
-`Testing/project-learning.md` is the plain-English knowledge base for ALL QA skills
-(created by `link-qc-1-generate-update-testing-structure`). This skill's section is
-`### Automation Model (skill 5)` (projects set up before the split may still carry the
-heading `### Automation Model (skill 5)` — rename that heading in place, keep its content);
-it also owns most of `## Automation Tricks`. If
-`Testing/` exists but the file does not, create it with the skeleton defined in skill 1,
-section 2.
+`Testing/project-learning.md` is the plain-English knowledge base for ALL QC skills (created at
+/speckit.constitution, QC-18). This skill's section is `### Automation Model (skill 5)`; it also
+owns most of `## Automation Tricks`. If `Testing/` exists but the file does not, create it with
+`## Index`, `## Project Knowledge`, `## Common Flows`, `## Automation Tricks`, `## Test Data` and
+this skill's section (`#### Knowledge`, `#### Questions and Answers`).
 
 *Read first — targeted search, never the whole file:*
 1. Read only the `## Index` block at the top (one row per module: pages, similar modules, sections).
@@ -320,9 +269,9 @@ section 2.
    under 80 lines may be read whole.
 
 *Ask second:* anything still missing (not in the file, the task input, CLAUDE.md, or the
-env layer) → ask the user in ONE combined message and WAIT. Never re-ask what the file
-answers; state what you are reusing so the user can override it. PATs and credentials are
-NEVER written to the file.
+env layer) → ask the user in ONE combined message and WAIT (QC-1 / QC-3: evidence first, one
+batch, a recommended answer). Never re-ask what the file answers; state what you are reusing so
+the user can override it. Secrets are NEVER written to the file (QC-7).
 
 *Write back (mandatory before AUTOMATION COMPLETE):*
 - Every answered question → one tagged line under this skill's `#### Questions and Answers`:
@@ -341,12 +290,13 @@ NEVER written to the file.
 - Pages that follow the same identification pattern → `[similar: …]` on both entries; update
   the `## Index` row for every module touched.
 - Entries contradicted by the live run → correct them. The approved TC document and the
-  steering documents always win over the learning file.
+  constitution always win over the learning file (QC-1).
 
-*Content rules:* plain English a QC can read; one fact per line. Never method / class /
-function / file names, variables, CSS or XPath selectors, code snippets, stack traces, or
-secrets. `data-testid` values and URLs are the only technical tokens allowed, each explained
-in words on the same line.
+*Content rules (QC-1):* plain English a QC can read; one fact per line, confirmed facts with
+source and date. Never method / class / function / file names, variables, CSS or XPath
+selectors, code snippets, stack traces, requirement text pasted verbatim, or secrets.
+`data-testid` values and URLs are the only technical tokens allowed, each explained in words on
+the same line.
 
 *Report:* the `AUTOMATION COMPLETE` return ends with
 `**Learning file:** read {sections/tags} · updated {N added / M updated | "no new knowledge"}`.
@@ -354,65 +304,44 @@ in words on the same line.
 
 ---
 
-## PHASE 1 — AZURE DEVOPS LINKAGE (optional, detection only)
+## PHASE 1 — AZURE DEVOPS LINKAGE (not applicable under `ado_mode = local`)
 
 <ado_linkage>
-Beautifying and publishing the TCs is **not part of this skill** — it is
-`link-qc-4-publish-test-cases-azure`, a **separate and optional** skill. **It is not a prerequisite:
-this phase DETECTS whether it happened, it does not require it.** Never block here, never ask
-the user to publish or upload, never tell them to run skill 4.
-
-Detect `ado_mode` — all three must hold for `linked`:
-
-1. `{beautified_tc_doc}` exists and its frontmatter `source_sha256` equals
-   `sha256({source_tc_doc})`.
-2. `{ado_map}` exists, its `source_sha256` comment equals the same hash, and every TC-ID
-   of the approved document has a row with a work item ID.
-3. Spot-check one row: fetch the work item, confirm the title starts `[TC-ID]` and it is
-   Tested-By linked to the User Story.
-
-All three pass → **`ado_mode = linked`**: PHASE 5 will close the loop in DevOps, and
-`Needs human review` notes in the beautified document are carried into the coverage table as
-`manual — unconfirmed step` unless the original approved document resolves them.
-
-Any check failing, or the files simply not being there → **`ado_mode = local`**. State the
-reason ONCE in the chat as a Deviation (e.g. "not published to Azure DevOps — running
-locally", "ADO-MAP.md is older than the approved document — running locally") and **continue
-the full run**. PHASE 5 is then skipped silently. Never regenerate the beautified file and
-never create or edit Test Case work items here.
-
-Everything after this phase reads the **original approved document** (PHASE 2); `ADO-MAP.md`
-is read in PHASE 5 only under `linked`.
+`ado_mode` is `local` (passed by the invoking command). Azure DevOps publishing and
+synchronisation are out of scope (constitution QC-17): nothing is detected, fetched, created
+or updated in Azure DevOps, no beautified document or `ADO-MAP.md` is read, and the user is
+never asked to publish. Record `ado_mode = local` once in the chat and in `{run_file}` (its
+`ado_mode` key) and continue. Everything after this phase reads the approved
+`TEST-CASES-{feature}.md` (PHASE 2).
 </ado_linkage>
 
 ---
 
 ## PHASE 2 — GENERATE AUTOMATION CODE
 
-**Source document: the ORIGINAL approved `{source_tc_doc}` — never the beautified file.**
-The beautified document exists for Azure DevOps readers and may not exist at all
-(`ado_mode = local`); the automation contract always stays with the approved source. Reading
-the beautified file here would make the tests depend on an optional generated artifact.
+**Source document: the approved `{source_tc_doc}` (`TEST-CASES-{feature}.md`) — never a derived
+copy.** The automation contract always stays with the approved source.
 
-Legacy documents have no `Automation Candidate` field. Where the field exists (new
-`generate-manual-test-cases` output) respect it; otherwise **derive** candidacy: a TC is
+Legacy documents have no `Automation Candidate` field. Where the field exists (the QC test-case
+template) respect it — candidacy is a design decision recorded in the approved plan (QC-6);
+otherwise **derive** candidacy: a TC is
 automatable when every step maps deterministically to an action and an assertion (see
-`<normalization>`). Record the decision and the reason per TC — that record is what PHASE 5
-publishes as the template's automation flag. TCs that cannot be automated deterministically appear in
-the coverage table as `manual — not automated`, with the reason stated.
+`<normalization>`). Record the decision and the reason per TC. TCs that cannot be automated
+deterministically appear in the coverage table as `manual — not automated`, with the reason
+stated.
 
 **`[HUMAN]` steps do not change candidacy — they bound the execution.** A candidate TC whose
-steps carry the `[HUMAN] ` marker (skill 3 writes it only where no authorized test interface
-exists for an out-of-browser outcome — an SMS code read on a test phone, a letter on a desk) is
+steps carry the `[HUMAN] ` marker (QC-6: written only where no authorised interface can perform
+the step — an SMS code read on a test phone, a letter on a desk) is
 **generated up to the first human step**: every step before it becomes automation with its
 assertions and the evidence image, the human step and everything after it are not written into
 the spec. Its coverage-table status is `partial (human step: n)` (`n` = the step number) and its run
 outcome word is **`PARTIAL — human step pending`** (`references/run-report.md` §4 — Classification
-`human step: n`). A partial TC **never** reports `PASS`, never counts as passed anywhere, never
-becomes `Automated` in Azure DevOps and never gets an `automated_tc_sha256` (PHASE 5). The four
-axes stay separate: design coverage (the TC exists in full — skill 3), automation candidacy (YES
-/ NO — the document), execution coverage (`full` / `partial (human step: n)` / `manual — not
-automated` — this skill) and validation status (3b / 3c).
+`human step: n`). A partial TC **never** reports `PASS` and never counts as passed anywhere
+(QC-9). The four axes stay separate: design coverage (the TC exists in full — the test plan and
+test-case document), automation candidacy (YES / NO — the document, QC-6), execution coverage
+(`full` / `partial (human step: n)` / `manual — not automated` — this skill) and validation
+status (skill 3c, QC-8).
 
 **Generate first, ask second.** An approved document can still read ambiguously in places. Such
 a TC is **NOT a failure and NOT a block** — this phase writes every TC it can and **parks** the
@@ -421,27 +350,23 @@ generates them. Parking is the normal path; never stop the phase over an ambigui
 resolve one silently here.
 
 <source_of_truth>
-**Only an approved requirement or an explicitly approved clarification may define an expected
-result.** Everything else is evidence about the implementation, not authority over it.
+> Policy: constitution "Quality Control" article QC-1 (code, observed behaviour and learning
+> notes never settle a business rule), QC-3 (code and requirement disagree → the requirement
+> wins until a human decides; business-rule gaps go to /speckit.clarify) and QC-9 (expected
+> results come from approved requirements and cases, never from current application
+> behaviour; an unanswered ambiguity is an `@unverified-assumption`, excluded from confirmed
+> coverage and never reported as an application bug). This skill applies those rules and does
+> not restate them.
 
-- **Application code and observed behaviour describe what the app does today.** They never, on
-  their own, make that behaviour correct. Use them to *form* a question or to confirm a selector —
-  never to settle what a test should expect.
-- **`Testing/project-learning.md` entries are weighed, not ranked.** Judge each by its source (a
-  user answer? an observation? a guess?), its approval, and its relevance to this module/page/
-  locale. A line that merely records what the app did **never outranks an approved requirement**;
-  where they conflict, the requirement wins and the conflict is reported.
-- **Skill 11's discovered business rules are proposals** until the PO decision block is filled and
-  skill 11 has been re-run with `--apply-approved`. Before that they may inform a PHASE 2.4
-  question; they may never become an assertion.
-- **Report conflicts, never resolve them silently.** Where an approved TC and its requirement
-  disagree, state both wordings under `### Deviations` and park the TC as an open question.
-- **An unanswered question never turns current behaviour into an approved expectation.**
-  Exploratory checks may still be generated on the best-evidenced reading — tagged
-  `@unverified-assumption` with the assumption stated — but they are **excluded from confirmed
-  requirement coverage** and counted as *Assumed*.
-
-Full rules, including assertion quality: `references/automation-rules.md` §1-§2.
+Mechanics in this skill: an approved clarification is a `PHASE 2.4` answer the user actually
+gave, or a decision already recorded in `Testing/project-learning.md` from such an answer
+(weigh a learning line by its source, approval and relevance — never above a requirement).
+Application code, observed behaviour and existing page objects are used to *form* a PHASE 2.4
+question or to confirm a selector — never to settle what a test should expect. Where an
+approved TC and its requirement disagree, state both wordings under `### Deviations` and park
+the TC as an open question. Exploratory checks generated on the best-evidenced reading are
+tagged `@unverified-assumption` with the assumption stated and counted as *Assumed*
+(`<coverage_measurement>`). Assertion mechanics: `references/automation-rules.md` §1-§2.
 </source_of_truth>
 
 <hierarchy_verification>
@@ -474,6 +399,10 @@ Full rules, including assertion quality: `references/automation-rules.md` §1-§
 </hierarchy_verification>
 
 <automation_inventory>
+> Policy: constitution QC-9 (the whole automation root is scanned before a page object is
+> written; a reuse / extend / create decision is recorded; a second page class for the same
+> screen is a compliance failure). This skill applies it; the procedure below is the mechanics.
+
 **Mandatory pre-write scan — no page object is written before the inventory exists.** A twin page
 class (a second `OrderPage`, a `4-ListingPage.ts` beside `ListingPage.ts`, a new class on a route
 another class already opens) is a Checkpoint A failure, whatever folder or agent wrote the original.
@@ -508,6 +437,10 @@ another class already opens) is a Checkpoint A failure, whatever folder or agent
 </automation_inventory>
 
 <pom_mandatory>
+> Policy: constitution QC-9 (page objects — locators and UI assertions live only there; specs
+> orchestrate steps). This skill applies it; the boundaries, routing table and self-checks below
+> are the mechanics the validator enforces.
+
 **Page Object Model is MANDATORY — no direct locators in spec files.**
 
 - Every screen interaction in a spec goes through a page-object method.
@@ -657,8 +590,9 @@ Internal step (no JSON handoff files) — normalize each approved TC:
   "first E row" or "any Administrator" anywhere. A `[HUMAN]` step is kept as text and bounds the
   generated part (PHASE 2 candidacy). A `- **Reviewer comment:**` bullet is the reviewer's note to
   the QA skills: it is never normalized, never generated into code, never part of the TC hash; an
-  open one that asks for a TC change is reported once ("route to skill 3 `--revision`"), and the
-  approved text is automated as written.
+  open one that asks for a TC change is reported once ("route to the test plan — QC Lead
+  re-approval, then /speckit.tasks re-expansion", QC-3 / QC-8), and the approved text is
+  automated as written.
 </normalization>
 
 <selector_resolution>
@@ -666,7 +600,7 @@ Selectors come from SOURCE ONLY — never from memory, never guessed:
 
 0. Grep `Testing/project-learning.md` for this feature's `[module: …]` / `[page: …]`
    `[type: trick]` lines (and its `[similar: …]` pages): known identification patterns and
-   `data-testid` values recorded by earlier runs or by skill 3/10 are verified against source
+   `data-testid` values recorded by earlier runs or by live validation are verified against source
    once, not rediscovered. After resolution, record every newly confirmed pattern and value
    there in words (`- [module: Orders] [page: Order Details] [element: Save button] [type: trick] Identified by test id order-save-button; enabled only after all required fields are filled.`).
 1. Scan the implementation files for the feature (Angular templates `*.html`,
@@ -875,11 +809,11 @@ Write the spec against `{automation_root}` following the project conventions:
   slice — split only for unrelated surfaces or incompatible setup, and document why.
 - **Traceability header** (mandatory):
   Feature · Requirement(s) · Change Type · Regression Risk · Target Test Type ·
-  Generated by: test-automation skill · Steering versions · Source TC document path.
-- **Auth:** through `{login_page_object}` with credentials from the env layer
-  (`env.username` / `env.password` / `env.baseURL`). NEVER hardcode credentials or
-  URLs; NEVER invent env-var names; no raw inline login flow; no storageState
-  unless the project actually uses it.
+  Generated by: test-automation skill · Constitution version (`qa_standards`) · Source TC document path.
+- **Auth:** through `{login_page_object}` with credentials resolved per account ID from the
+  env layer (`account('A1')` → `A1_USER` / `A1_PASSWORD`, `environment('E1')` → `E1_URL`;
+  secret names per QC-7). NEVER hardcode credentials or URLs; NEVER invent env-var names; no
+  raw inline login flow; no storageState unless the project actually uses it.
 - **Registration:** add the new UI spec filename to the `{browser_project}`
   `testMatch` regex in `playwright.config.ts` (and the non-browser project's
   ignore list where applicable). An unregistered UI spec runs under the wrong
@@ -887,8 +821,8 @@ Write the spec against `{automation_root}` following the project conventions:
 - **Structure:** `test.describe('{REQ-IDs}: {requirement description}')`;
   every test title starts with `[TC-ID]` and carries exactly one of
   `@positive` / `@negative`; TCs marked `Smoke: YES` in the approved TC document
-  ALSO carry `@smoke` (additive — the polarity tag stays). `@smoke` derives ONLY
-  from the TC document's `Smoke:` field — never from this skill's own judgment.
+  ALSO carry `@smoke` (additive — the polarity tag stays). `@smoke` derives only
+  from the TC document's `Smoke:` field (constitution QC-9).
   Every title ALSO carries its `<run_plan>` tag — `@run:parallel` or
   `@run:serial-{group}` — and serial groups sit in their own describe block with
   `test.describe.configure({ mode: 'serial' })`. Every test calls
@@ -921,17 +855,21 @@ Write the spec against `{automation_root}` following the project conventions:
 - **Test data a TC creates** is named by `uniqueName(prefix)` / cleaned by `runPrefix(prefix)`
   from `helpers/test-data.ts` — never a fixed literal (`references/code-craft.md` §7).
 - **Console guard** attached in `beforeEach`, reported in `afterEach` (`helpers/console-guard.ts`,
-  allow-list from `Testing/qa-manifest.json` `automation.consoleAllowList`); an unexpected browser
-  error is a Deviation for the human, never a TC failure by itself.
+  allow-list from `Testing/qa-manifest.json` `automation.consoleAllowList`); an unexpected entry is
+  handled per constitution QC-13 (a deviation, never a TC failure by itself).
 - **Fixtures** (`fixtures/test.ts`, `test.extend`) may wrap `prerequest/` functions for guaranteed
   teardown; the spec then imports `test` / `expect` from there (`references/code-craft.md` §6).
-- **Skip guards** are written ONLY from a PHASE 2.6 outcome — a QC `skip` decision, the
+- **Skip guards** are written only from a PHASE 2.6 outcome — a QC `skip` decision, the
   pipeline default for an undecided gap, or an `IMPOSSIBLE` requirement — with the gap's
-  exact wording as the one-line reason. Never invented by the spec author, never to avoid a
-  real failure, never `test.skip(!data)` "just in case".
+  exact wording as the one-line reason (constitution QC-7 — applied, not restated).
 </spec_writing>
 
 <test_modifiers>
+> Policy: constitution QC-9 (`test.only` is never committed; every skip / fixme / fail carries a
+> traceable reason; skips and unknown outcomes are never PASS). The table below is how each
+> modifier is treated in the status model and by the validator (`focus-only`,
+> `modifier-no-reason`).
+
 **`only` · `skip` · `fixme` · `fail` · `slow` — every form: bare, conditional
 (`test.skip(cond, 'reason')`) and suite-level (`test.describe.skip(…)`).**
 
@@ -954,28 +892,28 @@ Detail: `references/automation-rules.md` §3.
 </test_modifiers>
 
 <wait_policy>
-**Applies to specs, page objects, fixtures and helpers alike** — a fixed wait moved out of a spec
-into a page object is the same fixed wait.
+> Policy: constitution "Quality Control" article QC-9 (bounded readiness checks — no
+> `networkidle`, no fixed sleeps without a stated reason, every wait bounded by its step
+> deadline, timeouts from one timeouts file; never raise a timeout to hide a failure). This
+> skill applies it and does not restate it.
 
-- Prefer an **observable condition**: a web-first assertion, `waitForURL`, `waitForResponse`, or a
-  state the page object exposes. Bounded polling (`expect.poll`, `toPass({ timeout })`) is fine.
-- **Timers are not banned.** A justified retry backoff, a real debounce, or an explicit timing
-  requirement from the spec is legitimate — state the reason on the line above or in a `qa-allow`
-  so it appears in the report instead of reading as a lazy sleep.
-- **Never raise a timeout to conceal an unexplained failure.** Either the reason is known (say it)
-  or it is unknown (investigate it).
-- **Never `networkidle` as readiness** (`waitForLoadState('networkidle')`, `{ waitUntil:
-  'networkidle' }`) — it never settles on pages that poll and settles too early on lazy pages.
-  Wait for the application's own signal: the loader hidden, the response that carries the data,
-  a web-first assertion on the element the step needs. Validator rule `wait-network-idle`.
-- **Every wait is bounded by the step deadline** (`helpers/steps.ts`, `timeouts.ts`); a visible
-  loader never extends it — a loader that outlives the deadline IS the timeout the step reports.
-  Timeout values come from `timeouts.ts`, never inline.
-
-Detail: `references/automation-rules.md` §4 and `references/code-craft.md` §9-10.
+Mechanics: the rule applies to specs, page objects, fixtures and helpers alike — the validator
+runs `wait-for-timeout`, `bare-set-timeout` and `wait-network-idle` in every layer passed in
+`--files` (a justification comment with a timing word, or a `qa-allow`, downgrades the warning
+to `info` and raises `exception-unverified` for semantic review). Readiness is an observable
+condition (web-first assertion, `waitForURL`, `waitForResponse`, a page-object state) or
+bounded polling (`expect.poll`, `toPass({ timeout })`); every wait is bounded by the step
+deadline (`helpers/steps.ts`) and every value is imported from `timeouts.ts`. Detail:
+`references/automation-rules.md` §4 and `references/code-craft.md` §9-10.
 </wait_policy>
 
 <checkpoint_a>
+> Policy: constitution QC-9 (compliance = static validator plus semantic review, Checkpoint A
+> before the run and Checkpoint B on the final code; check states verified-mechanical /
+> verified-semantic / unresolved / N/A; an applicable check that did not run stays unresolved
+> and keeps the gate BLOCKED; automation is complete only when both checkpoints pass against the
+> current code digest). This skill applies it; the procedure below is the mechanics.
+
 **CHECKPOINT A — MANDATORY PRE-RUN COMPLIANCE GATE.** Runs after generation and BEFORE anything
 executes; it is the first gate in `<environment_gate>`. Load
 `references/compliance-checkpoints.md` and work its checklist — it is derived from every rule in
@@ -991,7 +929,7 @@ fixtures, helpers, configuration and evidence/reporting code they touch.
    ```bash
    node .claude/skills/link-qc-5-test-run-automation/scripts/validate-automation.mjs \
      --root . --pretty --files <in-scope specs + the page objects, components, fixtures and helpers they touch> \
-     --tc-ids <approved TC doc> --req-ids <REQ file> --require-steps \
+     --tc-ids <approved TC doc> --req-ids <spec.md or the approved TC doc: FR- / SC- ids> --require-steps \
      --inventory {reports_folder}/automation-inventory.md
    ```
    `--files` carries the page objects and helpers too: the wait, positional-selector and
@@ -1012,9 +950,8 @@ fixtures, helpers, configuration and evidence/reporting code they touch.
    point, and whether each honoured exception's cited source actually justifies it.
    **A clean grep does not prove compliance.**
 3. **Fix confirmed automation-code violations immediately.** They are repairs, not
-   recommendations — never defer them, never list them for the user to approve, never ask anyone
-   to say "fix 1". Only an unresolved **business** decision (one that changes what the expected
-   behaviour is) goes to the user.
+   recommendations (constitution QC-9: routine automation-code repairs need no approval; only an
+   unresolved business decision goes to a human).
 4. **Repeat the affected checks after every repair** — a repair invalidates what it touched.
 5. **Proceed with the compliant scope only.** Tests still blocked are isolated and reported
    against the original scope; the run continues for everything independent of them.
@@ -1092,6 +1029,12 @@ Checklist (all of these, plus `references/compliance-checkpoints.md` §2):
 ## PHASE 2.4 — OPEN QUESTIONS (interpretation gate)
 
 <open_questions>
+> Policy: constitution "Quality Control" article QC-3 (resolve from evidence first — learning
+> → spec and the article → code → read-only data; then 2–3 options with one Recommended answer
+> and a one-line reason, asked in one batch, never re-asked) and QC-9 (`@unverified-assumption`).
+> This skill applies it; the collection, option-derivation, ask and write-back mechanics below
+> are the tool's.
+
 **Runs after PHASE 2 generated everything it could, and BEFORE PHASE 2.5.** An approved TC
 document can still read ambiguously in places. Those TCs are **decided here with the user —
 never blocked, never guessed silently, and never discovered by the run.**
@@ -1099,13 +1042,12 @@ never blocked, never guessed silently, and never discovered by the run.**
 The shape is the same as `<data_readiness>`: collect → dedupe → find options with evidence →
 ask ONCE → execute → write the artifact → write back to the learning file.
 
-**1. Collect the open questions** from four sources, each item carrying the exact wording:
+**1. Collect the open questions** from three sources, each item carrying the exact wording:
 
 | Source | What | Where it came from |
 |---|---|---|
 | `A` | A step or Expected Result that cannot map deterministically to an action + assertion | `<normalization>` parked it |
 | `B` | An AMBIGUOUS / NOT_FOUND / DYNAMIC element no safe fix resolved | `<selector_resolution>` step 4 |
-| `C` | `> Needs human review: …` notes in `{beautified_tc_doc}` | skill 4 — only under `ado_mode = linked` |
 | `D` | `TBD`, `to be confirmed`, `open question`, `assumption:`, or a trailing `?` inside an Expected Result / Precondition of `{source_tc_doc}` | the approved document itself |
 
 **De-duplicate:** the same ambiguity hit by several TCs is **ONE question** carrying the TC
@@ -1120,7 +1062,6 @@ the first that answers it:
 2. **The application source and existing page objects** — what the code actually does: sort
    order, exact message text, validation limit, default state, which element carries the label.
 3. **A sibling TC in the same approved document** that states the same behaviour unambiguously.
-4. **`US-{id}-code-rules.md`** (skill 11) and skill 10's white-box output, when present.
 
 Every candidate states its evidence — the file and what it shows. Offer **2-4 candidates**,
 plus always `manual — don't automate this TC` and `other — type the exact expected wording`.
@@ -1140,11 +1081,9 @@ Ambiguity | Options (evidence) | Recommended |`, answered in one line).
 - Generate the test from the **recommended, evidence-backed** candidate.
 - Tag the test `@unverified-assumption`, state the assumption as a comment at the top of the
   test and in the report.
-- **HARD GUARD — a failing `@unverified-assumption` test is classified `unverified_assumption`,
-  NEVER `app_bug`.** The interpretation is suspect before the application is. Such failures are
-  **excluded from the smoke-gate `app_bug` majority math** (a wrong guess must never stop the
-  run), are never filed as a bug, and are never published as Passed — ADO outcome
-  `Inconclusive`, like `INCOMPLETE`.
+- **HARD GUARD** — a failing `@unverified-assumption` test is classified `unverified_assumption`,
+  never `app_bug`; it is excluded from the smoke-gate majority math, never filed as a bug and
+  never reported as Passed (constitution QC-9 — applied, not restated).
 - **No evidence-backed candidate → nothing to guess from.** That TC is skip-guarded with the
   exact open question as its reason; it is never invented.
 - Coverage table: `partially covered — unverified assumption`.
@@ -1161,8 +1100,8 @@ later run, or for another story hitting the same ambiguity.
   Any TC touching that list then reuses it without asking.
 - Tag it at the level the rule actually holds (`[module: …]` / `[page: …]` / `[element: …]`),
   and add `[similar: …]` on both entries when sibling pages behave the same way.
-- An answer that holds **project-wide** goes to `## Project Knowledge` as well, so skills 1-11, 3b and 3c
-  share it — that is the generic tier.
+- An answer that holds **project-wide** goes to `## Project Knowledge` as well, so every retained QC skill
+  shares it — that is the generic tier.
 - Also keep one traceability line in this skill's `#### Questions and Answers`:
   `- [module: X] [type: qa] **Q (skill 5, {YYYY-MM-DD}):** … — **A:** …`
 - Update the `## Index` row for every module touched.
@@ -1209,13 +1148,19 @@ Live progress line (the `<live_progress>` format, stage `Open questions`):
 ## PHASE 2.5 — STATIC COVERAGE MEASUREMENT (pre-run gate)
 
 <coverage_measurement>
+> Policy: constitution "Quality Control" article QC-11 (automation coverage = (fully + 0.5 ×
+> partially automated cases) / all cases of the approved document, manual cases in the
+> denominator; target and enforcement from the configuration table, passed by the invoking
+> command) and QC-4 (design coverage, automation coverage and execution results are three
+> separate measures). This skill applies it; the classification heuristics, gate procedure and
+> CSV contracts below are the mechanics.
+
 **Runs after `<checkpoint_a>` and BEFORE PHASE 3 — nothing executes until this verdict exists.**
 This is a static read of the spec source, not a pass/fail result: it answers "how much of
 the approved document does the generated code *really* cover?" — and it is deliberately
 skeptical, because a `test()` that exists is not a TC that is covered.
 
-**Denominator = every TC in `{source_tc_doc}`** (the ORIGINAL approved document — never the
-beautified file). Locale variants (`TC-01`, `TC-01b`) are separate TCs, as in the document.
+**Denominator = every TC in `{source_tc_doc}`** (the approved document). Locale variants (`TC-01`, `TC-01b`) are separate TCs, as in the document.
 `manual — not automated` TCs stay in the denominator; the number must be honest.
 
 **THREE DIFFERENT NUMBERS — report them separately, never let one stand in for another**
@@ -1232,27 +1177,24 @@ asserts the requirement's outcomes is a separate judgement. A calculation requir
 by a visibility assertion is `Partial`, never `Full`. `@unverified-assumption` tests are
 **`Assumed`** — never `Full`, and excluded from confirmed requirement coverage.
 
-**Requirement IDs are validated, never invented.** Resolve every REQ/AC id against the resolved
-sources (the story's `REQ-*.md`, the approved TC document, `ADO-MAP.md` when present). Report an id
-you cannot resolve; **never derive, renumber or invent one here** — skill 2 owns REQ IDs and
-skill 3 owns TC IDs. `validate-automation.mjs --req-ids <REQ file>` flags titles referencing an
-unknown id; without the list that check is `notRun`, never a pass.
+**Requirement IDs are validated, never invented.** Resolve every requirement id (FR- / SC- / acceptance-scenario ids) against the resolved
+sources (the feature's `spec.md`, the approved test plan's traceability matrix, the approved TC
+document). Report an id you cannot resolve; **never derive, renumber or invent one here** —
+spec.md owns requirement IDs and the test-case document owns TC IDs (QC-4).
+`validate-automation.mjs --req-ids <spec.md or the approved TC document>` flags titles
+referencing an unknown id; without the list that check is `notRun`, never a pass.
 
 **Carry forward the document's TC validation states — and treat them as possibly stale.** The
 approved document marks each TC `validated` / `enhanced` / `inferred` / `discrepancy` /
-`not-implemented` / `draft`. The states other than `draft` are set by the optional
-`link-qc-3b-validate-manual-test-cases` or `link-qc-3c-validate-manual-test-cases-cli` (skill 3 itself never
-validates live; the stamp key `tool: mcp | cli` says which); when neither ran every TC is
-`draft`, which is normal. Those labels were true when the validator wrote them (its evidence stamps
+`not-implemented` / `draft`. The states are defined in QC-8 and set by live validation
+(`link-qc-3c-validate-manual-test-cases-cli`, run by /speckit.implement before this skill); a
+document that was never validated live is all `draft`, which is normal. Those labels were true when the validator wrote them (its evidence stamps
 say when and on which build):
 
-- **Re-verify readiness where you can.** An `inferred` or `draft` TC whose screen is now reachable
-  is worth re-checking before its label is trusted.
-- **Genuinely unavailable implementation** → the TC is `pending — not covered for this run`. Not a
-  failure, not an application defect, and it stays visible in the denominator.
-- **Investigate a `draft` or unvalidated TC before classifying its failure.** A draft TC failing is
-  not by itself proof of an application defect — the TC may simply be wrong. It may still reveal a
-  real defect once verified. Verify first, classify second.
+- Handle them per constitution QC-9 / QC-13 (applied, not restated): re-verify readiness where
+  you can; a genuinely unavailable implementation is `pending — not covered for this run` (visible
+  in the denominator, not a failure); investigate a `draft` or unvalidated TC before classifying
+  its failure.
 
 Keep missing, partial, blocked and unexecuted coverage visible in their own counts, and **extend**
 the existing reports rather than replacing them.
@@ -1274,7 +1216,8 @@ Capture per `test()`: `tcId` (from the `[TC-ID]` in the title), describe group, 
   asserts is an interpretation nobody confirmed
 
 **2. Classify every TC of the document** against the inventory — match on TC-ID first, then on
-action + role + screen where a TC-ID is missing from a title:
+action + role + screen where a TC-ID is missing from a title. The status definitions (fully /
+partially automated) are constitution QC-11; the table maps them onto the inventory flags:
 
 | Status | Weight | Assign when… |
 |---|---|---|
@@ -1303,26 +1246,26 @@ Also count distinct automated TC-IDs per spec (context only — role loops and d
 it is not "tests that will execute").
 
 **4. Gate** — compare the overall weighted % with `{coverage_target}` using `{coverage_mechanism}`
-(both from L3; defaults 80 % / soft block — say which source was used):
+(both passed by the invoking command from the constitution's QC configuration table — QC-11 /
+QC-17; defaults 80 % / soft block when absent — say which source was used):
+
+> Policy: constitution QC-11 defines the enforcement semantics of `hard block` / `soft block` /
+> `report-only` (one repair pass, re-measure; soft block asks `run anyway` / `fix more` / `stop`).
+> Applied here, not restated.
 
 - **≥ target → PASS.** Print the verdict and continue.
-- **Below target, `soft block` (default):**
-  1. List every Partial / Not Covered TC whose `Automation Candidate = YES` — these are the
-     fixable ones. `manual — not automated` TCs are never a reason to block and are never
-     "fixed" here.
-  2. ONE repair pass on that list under the PHASE 2 rules (POM mandatory, no banned patterns,
-     no lowered assertions): strengthen access-only assertions to the document's expected
-     result, remove skip guards that hide a runnable scenario, add the missing negative /
-     empty-state test where the document has the TC. Never invent scenarios.
-  3. Re-measure (steps 1–3).
-  4. Still below → print the gap table and **ask the user**: `run anyway` (recorded as a
-     user override in the report) / `fix more` (another pass, then re-ask) / `stop` (BLOCKED
-     with the gap table). Never silently proceed.
-- **`hard block`** → same repair pass; still below → BLOCKED, no run.
-- **`report-only`** → continue; the number and gaps still go everywhere below.
+- **Below target → the repair pass**, under the PHASE 2 rules (POM mandatory, no banned patterns,
+  no lowered assertions), on every Partial / Not Covered TC whose `Automation Candidate = YES`
+  (`manual — not automated` TCs are never a reason to block and are never "fixed" here):
+  strengthen access-only assertions to the document's expected result, remove skip guards that
+  hide a runnable scenario, add the missing negative / empty-state test where the document has
+  the TC. Never invent scenarios. Then re-measure (steps 1–3) and apply the
+  `{coverage_mechanism}` outcome per QC-11: a user override is recorded in the report, a stop is
+  BLOCKED with the gap table printed, `report-only` continues with the number and gaps reported
+  everywhere below. Never silently proceed.
 
 Live progress line (the `<live_progress>` format, also appended to the run log):
-`Coverage: {x}% weighted (Full {n} · Partial {n} · None {n}) — target {t}% ({L3 | default}) — {PASS | BELOW TARGET → repairing | BELOW TARGET → user override | BLOCKED}`
+`Coverage: {x}% weighted (Full {n} · Partial {n} · None {n}) — target {t}% ({constitution | default}) — {PASS | BELOW TARGET → repairing | BELOW TARGET → user override | BLOCKED}`
 
 **5. Write the coverage folder** — `{coverage_root}` = `{results_root}/coverage/`, **replaced every
 run**; history lives in `{run_file}.coverage_snapshot` (per-TC statuses + delta) and in each
@@ -1349,8 +1292,9 @@ Quote any CSV field containing a comma; use these exact headers.
   `Empty State (Negative)`, `Permission / Unauthorized (Negative)`, `System / Background-Job
   Triggered`, `Display / Field Presence`, `Cross-Role Specific`, `Per-Row Enumeration &
   Identity`, `Role Variant`, `Config-Skipped (coded, never runs)`, `Completeness`.
-  Priority: **High** = security / permission, empty-state, coded-but-never-runs; **Medium** =
-  background jobs, field display, cross-role; **Low** = redundant per-row enumeration.
+  Priority per constitution QC-6 (manual-only rows): **High** = security / permission,
+  empty-state, coded-but-never-runs (pending implementation); **Medium** = background jobs,
+  field display, cross-role; **Low** = redundant per-row enumeration.
 - Store `coverage_snapshot` in `{run_file}` with target/source/mechanism, stage/TC/requirement
   counts, manual priorities and delta (run-report.md §7). Compare against the newest earlier
   `.runs/phase-*.json` that carries a snapshot, falling back to a read-only legacy
@@ -1371,12 +1315,22 @@ as plain-English `[type: env]` / `[type: trick]` lines under `### Automation Mod
 ## PHASE 2.6 — PRECONDITION & TEST-DATA READINESS (QC decision gate)
 
 <data_readiness>
+> Policy: constitution "Quality Control" article QC-7 (data status READY / MISSING / IMPOSSIBLE /
+> UNKNOWN set only from evidence; preparation order end-to-end scenario → API → database → set
+> directly → manual, API / database only when confirmed available and authorised; seeding needs
+> a non-production target and an explicit yes for THIS run — never stored — is idempotent and
+> logged, and never uses sign-up, payment, real personal data or schema changes; synthetic data
+> with unique ownership; cleanup of owned data only, after evidence, in reverse dependency
+> order; created data never becomes an oracle; no secret in any file, chat, log or command
+> line). This skill applies it; the inventory, probe, ask, provisioning and write-back
+> mechanics below are the tool's.
+
 **Runs after PHASE 2.5 and BEFORE anything executes.** A TC that would skip because its
 precondition cannot be met or its data is absent from the environment is **decided here by the
-QC — never discovered by the run.** The run must not be the first place a "no data" skip appears.
+QC — never discovered by the run** (constitution QC-7).
 
-**1. Collect the requirements** — start from skill 3's
-`{tc_output_folder}/TEST-DATA-{feature}.md` when it exists: take its environment rows (`## 0.
+**1. Collect the requirements** — start from the feature's
+`{tc_output_folder}/TEST-DATA-{feature}.md` (expanded at /speckit.tasks) when it exists: take its environment rows (`## 0.
 Environment`, `E{n}`), data items (`D{n}`), TC mapping, accounts (`## 1. Accounts`, `A{n}`),
 statuses (`READY` / `MISSING` / `IMPOSSIBLE` / `UNKNOWN`), Problems table and recommended ways as
 the inventory of record — **do not rebuild the inventory from scratch**. Every ID a TC references
@@ -1385,7 +1339,7 @@ account, not "an Administrator"; a referenced ID with no row is a gap to list he
 substitution.
 Add only requirements the approved TC document carries that the file lacks (a Preconditions /
 Data Oracle / Shared data sentence or a role with no data item), and say which were added.
-Skill 3 owns that file — never edit it; record outcomes in the learning file and
+The test-data expansion (/speckit.tasks) owns that file — never edit it; record outcomes in the learning file and
 `{run_file}.data_readiness` only. When the file is missing, derive the requirements from
 `<normalization>` as before (one per Preconditions / Data Oracle / Shared data sentence and per
 role used), de-duplicated across TCs, each with the list of TC-IDs that depend on it. Either
@@ -1426,7 +1380,9 @@ Every TC touching a non-`READY` requirement goes on the **predicted-skip list** 
   the entity through the screens → can become a setup journey built from page objects.
 - `db` — offered only when `{db_access}` is `helper`, or the QC names a connection env var.
 - `manual` — always available (the QC inserts the data; the skill re-checks).
-Recommended default: `api` when found → else `ui` → `db` only when the QC grants it → `manual`.
+Recommended default follows the QC-7 preparation order: `ui` (an end-to-end scenario through
+page objects) when a flow exists → `api` when confirmed available and authorised → `db` only
+when confirmed and the QC grants it → `manual`.
 
 **5. Ask the QC — ONE combined message** (the `<project_learning_file>` ask rule applies:
 learning file grepped first, nothing already answered is re-asked):
@@ -1438,29 +1394,34 @@ Test-data readiness — {N} TCs would be skipped without a decision
 | 1 | No order with line items in UAT             | TC-010, 011, 011b   | MISSING    | api (order create), ui   | api         |
 | 2 | No user with the Approver role              | TC-020, 020b        | IMPOSSIBLE | manual, skip             | skip        |
 Answer per gap:  api | ui | db | manual | skip   — add "keep" to leave created data in place
+Your answer is the authorisation to seed for THIS run only (non-production target — QC-7).
 Example: "1 api keep · 2 skip"
 db: also name the env var that holds the connection string (its value is never shown or stored).
 manual: reply "done" when the data is in — I re-check that gap before running.
 ```
 
-Interactive → **WAIT** for the answer; the QC's reply is the decision of record. Pipeline /
-non-interactive → apply recorded decisions from the learning file; gaps with none → `skip`
-with the precise reason (`source: pipeline-default`), the run continues with the rest.
+Interactive → **WAIT** for the answer; the QC's reply is the decision of record and the explicit
+yes for this run. Pipeline / non-interactive → reuse recorded *method* decisions from the
+learning file, but seeding (`api` / `ui` / `db`) still needs the explicit yes for this run that
+the invoking command or the QC gives — never stored, never inferred (QC-7); without it, and for
+gaps with no decision, the gap is `skip` with the precise reason (`source: pipeline-default`),
+and the run continues with the rest.
 
 **6. Execute the decisions** — under the PHASE 2 rules (POM mandatory, no banned patterns,
-never app business logic, never a credential in code, logs, or the learning file):
+never app business logic; secret handling per QC-7):
 
 | Decision | How | Teardown |
 |---|---|---|
 | `api` | `prerequest/{Entity}PreRequest.ts` — create + delete functions, find-or-create so re-runs are idempotent; wired through `beforeAll` / `afterAll` in the owning spec (single-line delegation only, per `<pom_mandatory>`) | delete in `afterAll` |
 | `ui` | `tests/{Area}_Tests/00-setup-{entity}.spec.ts` — an end-to-end journey built ONLY from page objects (login → navigate → create → assert it exists), tagged `@setup @run:setup-{entity}`; the run plan schedules it FIRST as its own serial setup group, before smoke | UI delete journey in `afterAll`, or the api/db delete when one exists |
-| `db` | `{db_access} = helper` → the project's DB helper; otherwise SQL through Bash (`sqlcmd` / `psql` / `mysql`) reading the connection string from the QC-named env var **at run time** — refuse if unset; never echo, log, write, or paste the value anywhere. Insert script + matching delete script, both idempotent, both under `{data_setup_layer}` | delete script in `afterAll` |
+| `db` | `{db_access} = helper` → the project's DB helper; otherwise SQL through Bash (`sqlcmd` / `psql` / `mysql`) reading the connection string from the QC-named env var **at run time** — refuse if unset (secret handling per QC-7). Insert script + matching delete script, both idempotent, both under `{data_setup_layer}` | delete script in `afterAll` |
 | `manual` | wait for the QC's "done", then re-probe THAT requirement only | none (QC owns the data) |
 | `skip` | skip guard on every dependent TC with the gap's exact wording; counted as `SKIP` with reason | — |
 
-Cleanup default is **delete** after the run. `keep` → no teardown, and the fixture is written
+Cleanup default is **delete** after the run (owned data only, after the evidence image, in
+reverse dependency order — QC-7). `keep` → no teardown, and the fixture is written
 to `## Test Data` as a `[type: data]` line (plain English: what exists, counts, identifiers,
-environment, how it was created, date) so future runs and skill 3 find it.
+environment, how it was created, date) so future runs and the test-data expansion find it.
 
 **7. Re-probe → verdict** `READY` · `READY-WITH-SKIPS ({n} TCs)` · `BLOCKED` (interactive
 QC chose to stop, or a chosen provisioning failed and the QC declined the alternatives).
@@ -1513,7 +1474,7 @@ contract, both markdown shapes, the run-file schema and the renderer's gates.
 ```text
 {automation_root}/reports/
   SPEC-initiative-management/                ← only when the TC folder has this parent
-    US-1234-create-order/                    ← {user_story_name}, the same leaf skill 3 used
+    US-1234-create-order/                    ← {user_story_name}, the same leaf as the TC folder
       TEST-RUN-REPORT-create-order.md        ← test-case status: header + ## Run history + one ## Phase N per run (appended)
       BUG-REPORT-create-order.md             ← the bugs: one ### BUG-n entry per defect, Status + History per phase
       TEST-RUN-REPORT-create-order.html      ← rendered from both files by scripts/render-run-report.mjs after every run
@@ -1548,8 +1509,7 @@ contract, both markdown shapes, the run-file schema and the renderer's gates.
   `automation-logs/…/US-{id}/` and `screenshots/` leaves are left untouched and mentioned once.
 - At finalization: complete the run file, append the `## Phase N` section, update the bug file,
   render (`<second_run>` step 4). The phase number appears in the run file (`"phase": N`), as the
-  `## Phase N — date` heading and a run-history row, in the rendered page, in the ADO summary
-  comment and in the final chat summary — it must be immediately clear which result belongs to
+  `## Phase N — date` heading and a run-history row, in the rendered page and in the final chat summary — it must be immediately clear which result belongs to
   which execution.
 
 **Screenshots — every TC, every variant, every attempt; one folder per User Story; IMMUTABLE:**
@@ -1557,7 +1517,7 @@ contract, both markdown shapes, the run-file schema and the renderer's gates.
 ```text
 {automation_root}/screenshots/
   SPEC-initiative-management/                  ← same {spec_level} as the reports
-    US-1234-create-order/                      ← {user_story_name}, same leaf name skill 3 used
+    US-1234-create-order/                      ← {user_story_name}, the same leaf name as the TC folder
       phase-3/
         variants.json                          ← slug → full title path, project, spec file
         TC-001/
@@ -1616,10 +1576,8 @@ exists so no module ever inherits that defect:
 - Specs only call the helper — no `page.screenshot(...)` in a spec body, ever.
 - **Evidence sanity check (PHASE 3 and PHASE 4):** for every PASS, confirm the image shows
   the state named in the TC's Expected Result (record present, message visible, value shown)
-  and not a cleaned-up screen. A PASS whose image shows post-cleanup state is classified
-  `evidence_failure` (a test-code defect: the call sits after teardown or after navigation)
-  and is self-healed by moving the call to the assertion point — it never counts as an
-  `app_bug` and never ships in the phase report uncorrected.
+  and not a cleaned-up screen. A post-cleanup image is `evidence_failure`, healed by moving the
+  `captureEvidence` call to the assertion point (constitution QC-13 — applied, not restated).
 - **Evidence is immutable history, like the phase reports.** Nothing under `{screenshots_root}`
   is ever overwritten or deleted — not stale TC-IDs, not earlier attempts, not earlier phases.
   Evidence referenced by an earlier attempt or by an earlier `{run_report_html}` must stay exactly
@@ -1671,7 +1629,7 @@ Automation generation/update → Open questions (user decision) → Checkpoint A
 Coverage measurement → Data readiness (QC decision + provisioning) →
 Setup journeys → Smoke execution → Smoke gate → Self-healing →
 Positive execution → Negative execution → Result generation → Report generation →
-Checkpoint B (compliance gate) → ADO update → Finalization
+Checkpoint B (compliance gate) → Finalization
 ```
 
 **Every log entry carries:** current stage · current run group (`parallel` /
@@ -1745,8 +1703,7 @@ beginning and go quiet.
 
 **The same concept applies outside test execution:** while generating/updating
 automation report files done/total, while reviewing results report TCs
-classified/total, while generating reports report sections done, and — when
-`ado_mode = linked` — while updating ADO report work items done/total.
+classified/total, while generating reports report sections done.
 </live_progress>
 
 <staged_execution>
@@ -1755,9 +1712,9 @@ classified/total, while generating reports report sections done, and — when
 **Stage 0 — setup groups** (only when PHASE 2.6 created `setup_groups`): each
 `00-setup-{entity}.spec.ts` runs alone, serially, `--grep "@setup"`, before smoke —
 `{run_command} --grep "@run:setup-{entity}" --workers=1`. A failed setup journey is
-`data_missing` for every TC of its `serial:{gap}` group: those TCs are marked `SKIP` with the
-gap reason and the rest of the run continues; the failure itself is reported under
-Test-data readiness, never counted against the smoke gate.
+`data_missing` for its `serial:{gap}` group — handled per constitution QC-9 (dependent TCs
+`SKIP` with the gap reason, reported under Test-data readiness, never against the smoke gate;
+the rest of the run continues).
 
 **Inside every stage the `<run_plan>` groups run in this order, browser visible
 (`{headed}`), always from the shared `playwright.config.ts` with `--project={browser_project}`
@@ -1788,19 +1745,20 @@ runs twice in one phase. Suites beyond ~40 tests are sliced per group and stage 
 
 1. **Smoke stage** — run ONLY `@smoke`-tagged tests:
    `{run_command}` + `--grep "@smoke"` (parallel group, then serial groups as above).
-2. **Smoke gate** — compute `fail% = failed / total smoke tests`:
-   - **fail% ≤ 30%** → proceed to the positive stage (the failures are still
+2. **Smoke gate** (QC-9; threshold `{smoke_gate}`, passed by the invoking command from the
+   configuration table `SMOKE_GATE`, team default 30 %) — compute `fail% = failed / total smoke
+   tests`:
+   - **fail% ≤ {smoke_gate}** → proceed to the positive stage (the failures are still
      classified and handled by the normal rules).
-   - **fail% > 30%** → classify EVERY smoke failure first (the PHASE 3
+   - **fail% > {smoke_gate}** → classify EVERY smoke failure first (the PHASE 3
      classification table; VPN/proxy/tunnel errors are `environment_failure`).
-     **`unverified_assumption` failures are EXCLUDED from the majority math entirely** —
-     counted and reported on their own, never on either side: a PHASE 2.4 guess that turned out
-     wrong must never stop the run or look like an application defect.
+     `unverified_assumption` failures are excluded from the majority math (constitution QC-9) —
+     counted and reported on their own, never on either side.
      - **Majority automation/env** (`selector_failure` + `assertion_failure` +
        `environment_failure` + `timeout_failure` outnumber `app_bug`) → fix the
        automation via the normal self-heal rules (env/VPN issues → fix the
        environment or ENVIRONMENT_BLOCKED), then **re-run the smoke stage**.
-       Maximum **2 smoke retry cycles**; still failing after that → honest stop,
+       Maximum **2 smoke retry cycles** (QC-9); still failing after that → honest stop,
        reported as-is.
      - **Majority `app_bug`** → **STOP THE RUN.** Do NOT execute the positive or
        negative stages. Still complete `{run_file}` (`status:
@@ -1808,7 +1766,7 @@ runs twice in one phase. Suites beyond ~40 tests are sliced per group and stage 
        record every smoke failure in `{bug_report_md}` in full `<bug_report_format>`, list every
        positive/negative TC as `NOT_RUN` with reason `smoke gate failed (application errors)`,
        and render — the renderer shows the banner. State the gate result
-       in the ADO summary comment and the final chat summary.
+       in the final chat summary.
 3. **Positive stage** — `--grep "@positive" --grep-invert "@smoke"` (smoke tests
    already ran; never run a TC twice in one phase) — parallel group, then serial groups.
 4. **Negative stage** — `--grep "@negative" --grep-invert "@smoke"` — same group order.
@@ -1911,9 +1869,11 @@ worked in the learning file.
 2b. **Timeout calibration — once, after the first run, from evidence.** List every
    `timeout_failure` and watchdog event (`{run_file}.timeouts.events[]`: TC-ID, step, elapsed,
    deadline, expected condition, trace / screenshot / heartbeat path, the durations of the
-   passing TCs for the same operation). For each: the trace shows the operation completing
-   legitimately after the deadline → raise the named key (`test.long`, `step.long`, a new
-   `operations.{name}`) in `timeouts.ts` — never inline, never a global bump — and record
+   passing TCs for the same operation). For each, apply the calibration rule of constitution QC-9
+   (a value rises only on evidence of legitimate completion; anything else is healed, never
+   re-timed; no retry absorbs a timeout): a legitimate late completion → raise the named key
+   (`test.long`, `step.long`, a new `operations.{name}`) in `timeouts.ts` — never inline, never a
+   global bump — and record
    `{key, from, to, reason, evidence}` under `{run_file}.timeouts.adjusted[]`, in the Heal Log
    (category `timeout_failure`, column 7 = the evidence path) and in the report's Timeout policy
    section. Anything else is healed as its real class. Teardown that timed out marks the TC
@@ -1921,20 +1881,21 @@ worked in the learning file.
    that did not change are stated as confirmed. **NOT_RUN** when no first run happened in this
    invocation (say so).
 3. **Self-heal ONLY test-code defects** (`selector_failure`, `assertion_failure`, `evidence_failure`):
+   > Policy: constitution QC-9 (self-healing touches only test-code defects — selector, wait,
+   > evidence — at most 2 iterations, each change recorded with its reason and evidence; never
+   > weaken an assertion, add a skip, raise a timeout to hide a failure, rerun to make a failure
+   > disappear, or edit product code or settings to get a pass; a genuine requirement change is
+   > an explicit test update, never a heal). This skill applies it and does not restate it.
    - fixes live in page objects / spec waits — never in app business logic
-   - re-verify the selector against source before changing it
-   - a **locator repair must preserve the intended element and behaviour** — a selector that
-     matches a *different* element is a new defect, not a fix
-   - an **assertion or expected-value change needs approved-requirement evidence** (a REQ/AC/TC
-     id or an approved clarification). No evidence → record the issue **unresolved**; never
-     invent a repair, and never let observed behaviour supply the new expected value
-   - a **genuine requirement change is an explicit test update**, described as such — not a heal
-   - HARD RULES: never lower an assertion threshold · never broaden an assertion
-     to make it pass · never add a skip to hide a failure · never suppress or swallow an error ·
-     never change an application setting, environment flag or configuration value to obtain a
-     pass · never edit product code · **never reinterpret an
-     `app_bug` as a test bug** — when the app contradicts the approved TC, the TC
-     wins and the app is buggy · **and never the reverse for an `@unverified-assumption`
+   - re-verify the selector against source before changing it; a **locator repair must preserve
+     the intended element and behaviour** — a selector that matches a *different* element is a
+     new defect, not a fix
+   - an **assertion or expected-value change needs approved-requirement evidence** (an FR / SC /
+     acceptance-scenario / TC id or an approved clarification — Heal Log column 7). No evidence
+     → record the issue **unresolved**; never invent a repair, and never let observed behaviour
+     supply the new expected value
+   - **never reinterpret an `app_bug` as a test bug** — when the app contradicts the approved TC,
+     the TC wins and the app is buggy · **and never the reverse for an `@unverified-assumption`
      test** — there the TC's expected result is a guess, so the guess is suspect first: it is
      `unverified_assumption`, not `app_bug`, until the user confirms the interpretation
 4. Re-run only the healed tests to confirm the heal — with `--repeat-each 3` (burn-in, named in
@@ -1964,6 +1925,13 @@ worked in the learning file.
 ## PHASE 4 — SECOND RUN (FINAL REPORT)
 
 <second_run>
+> Policy: constitution QC-9 (a case passes only when every required variant passes; a
+> `[HUMAN]`-bounded case is PARTIAL, never PASS; missing variants are INCOMPLETE; zero tests,
+> skips and unknown outcomes are never PASS; earlier attempts, failures, phases, screenshots and
+> logs are immutable history), QC-13 (one phase appended per run, earlier phases never
+> rewritten; Markdown only, HTML from the renderer) and QC-14 (bug lifecycle and id rules). This
+> skill applies them; the merge rules and file contracts below are the mechanics.
+
 1. **Clean full re-run** of the spec — same staged order (`<staged_execution>`:
    smoke → gate → positive → negative) with `<live_progress>` updates throughout.
    This run's results are the results of record — no fixes, no re-runs after it.
@@ -2071,7 +2039,8 @@ worked in the learning file.
      `declined {date}` with a one-line `Response`, and recompute the header count
      (`references/run-report.md` §9b). A comment never changes a bug's Status by itself (only a
      passing retest resolves it), never edits the reviewer's text, and a request for a TC change
-     is `answered` with the route to skill 3 `--revision`. "read my comments" alone runs this step
+     is `answered` with the route: test-plan revision and QC Lead re-approval, then re-expansion at
+     /speckit.tasks (QC-3 / QC-8). "read my comments" alone runs this step
      and the render, without executing tests.
    - Record Checkpoint B in `{run_file}.compliance`, set the run file's final status, then
      **render** — the HTML is never hand-written:
@@ -2086,8 +2055,7 @@ worked in the learning file.
    yourself; a hand-edited page is refused without `--force` — tell the user what would be lost
    first. Run `scripts/selftest-run-report.mjs` before delivering the page (a failing harness →
    the markdown is delivered, the page is not). Invariants the page must keep: INCOMPLETE has its
-   own colour with the missing variants named and is never published as Passed (ADO:
-   Inconclusive); unverified assumptions are never merged into Bugs; a smoke-gate stop shows the
+   own colour with the missing variants named and is never shown as Passed; unverified assumptions are never merged into Bugs; a smoke-gate stop shows the
    SMOKE GATE FAILED banner with every unexecuted TC as NOT_RUN; every variant and attempt stays
    visible; screenshots are relative links with the viewer, never base64.
 </second_run>
@@ -2140,8 +2108,8 @@ full in-scope suite → then **repeat the full Checkpoint B review** on the resu
 applicable checks before rerunning and repeat B afterwards. A recorded gate is valid only for the
 `scopeDigest` it names — **never claim completion from stale results.**
 
-**Do not rerun to make a failure disappear.** An unchanged application defect or an environment
-failure is not fixed by repetition: preserve the evidence, classify it (`app_bug`,
+**Do not rerun to make a failure disappear** (QC-9). An unchanged application defect or an
+environment failure is not fixed by repetition: preserve the evidence, classify it (`app_bug`,
 `environment_failure`, `unverified_assumption`), and report it as an unresolved blocker.
 
 **Gate result.** `PASS` only when there are no confirmed violations in the final delivered scope
@@ -2157,8 +2125,14 @@ leave a gate BLOCKED with nothing wrong in the code.
 
 <bug_report_format>
 Every `app_bug` entry — in `{bug_report_md}` (`BUG-REPORT-{feature}.md`, one `### BUG-n` entry
-per defect, from where the rendered page and anything filed to DevOps take it; fields and status
-rules in `references/run-report.md` §5) — uses this shape.
+per defect, from where the rendered page takes it; fields and status rules in
+`references/run-report.md` §5) — uses this shape.
+
+> Policy: constitution QC-14 (title as a plain sentence, expectation, actual result,
+> preconditions, reproduction steps starting at login, severity and priority — each earned,
+> never defaulted — environment / build and evidence; product, automation and environment
+> failures separated; unverified assumptions are never defects; lifecycle, retest and id
+> rules). This skill applies it; the shape below is the file contract the renderer parses.
 
 ### Title — ONE plain sentence naming the user-visible symptom
 
@@ -2211,86 +2185,15 @@ If no screenshot exists, say so plainly rather than omitting the field —
 
 ---
 
-## PHASE 5 — CLOSE THE LOOP IN DEVOPS (only under `ado_mode = linked`)
+## PHASE 5 — CLOSE THE LOOP IN DEVOPS (not applicable under `ado_mode = local`)
 
 <ado_closeout>
-**Under `ado_mode = local` skip this entire phase silently.** Record it in the structured
-return as `not applicable — story not published to Azure DevOps` and move on. Do NOT suggest
-running `link-qc-4-publish-test-cases-azure`, do NOT ask the user to publish or upload, and do NOT
-treat the skipped phase as a failure — the run is complete without it.
-
-Under `ado_mode = linked`, using `{tc_output_folder}/ADO-MAP.md` — columns
-`| TC-ID | ADO Work Item ID | published_tc_sha256 | automated_tc_sha256 | Automation candidate |
-AutomationStatus | Tags (introduced) | Suite |`. **This skill owns exactly two of them**:
-`automated_tc_sha256` and `AutomationStatus` (the `Automated` value only). `published_tc_sha256`
-and `Tags (introduced)` are skill 4's, `Suite` is skill 4's `--suite-only`; none of them is ever
-touched here, and a legacy map without the hash columns gets them added, never rewritten:
-
-0. **Compute the canonical hash of every TC that earned `Automated`** — ran `full` coverage (no
-   `[HUMAN]` step), `PASS` on every required variant in run 2, **after Checkpoint B PASS**:
-   ```bash
-   node .claude/skills/link-qc-5-test-run-automation/scripts/tc-hash.mjs --tc {source_tc_doc} --data {tc_output_folder}/TEST-DATA-{feature}.md --ids TC-01,TC-02 --pretty
-   ```
-   and write each `hashes[TC-ID]` into that TC's `automated_tc_sha256`. The hash is semantic
-   (behaviour fields + the role / data shape the TC references — `references/run-report.md` names
-   the script; the contract is the file's header): skill 4 keeps `Automated` on a later publish
-   only while it still equals `canonical(current TC)`, so a changed step or data shape flips the
-   Azure status to a conflict instead of overstating it. **A `PARTIAL` TC never gets a hash and
-   never `Automated`** (nor does a FAIL, INCOMPLETE, SKIP, NOT_RUN or `@unverified-assumption`
-   TC); its cell stays `—`. `tc-hash.mjs` is a byte-identical copy of skill 4's (MIRROR banner) —
-   run `node …/scripts/selftest-tc-hash.mjs` once per run before writing a hash; a failing harness
-   means no hash is written and the column is reported `NOT_RUN`.
-1. For every TC whose automation now exists and executed in run 2:
-   - **Resolve the template's automation flag ONCE per project** (`automation_flag`):
-     learning file `[type: env]` line → skill 4's `tc_template_quirks` → inspect the
-     Test Case work item type's fields (`_apis/wit/workitemtypes/Test Case/fields` — on the
-     self-hosted server there is no MCP tool for that: one REST `GET` through the shell with
-     `Authorization: Basic` from `$env:AZURE_DEVOPS_PAT_B64` read by name, never printed; or
-     skip the probe and try `update_work_item` with the candidate field, reading the 400).
-     Preference order: (a) a boolean custom field whose name means "automated"
-     (e.g. `Custom.TestAutomated`) → set it `true`; (b) otherwise
-     `Microsoft.VSTS.TCM.AutomationStatus` = `Automated`. Leave the flag unset / `false`
-     only where automation was deliberately never written. Record the resolved field and its
-     accepted values in the learning file as one `[type: env]` line so no later run re-probes.
-   - Set automated-test metadata
-     (`Microsoft.VSTS.TCM.AutomatedTestName` = the spec test title,
-     `Microsoft.VSTS.TCM.AutomatedTestStorage` = the spec file path). Both verified writable.
-   - `Microsoft.VSTS.TCM.AutomationStatus`: **⚠️ some process templates accept ONLY
-     `Not Automated` and `Planned` and REJECT `Automated`** with
-     `400 The field 'Automation status' contains the value 'Automated' that is not in the
-     list of supported values`. On that error: keep `Planned`, rely on the custom flag +
-     the metadata fields to express automation, never write `Automated` into `ADO-MAP.md`
-     (that records a status ADO refused), and record the restriction in the learning file.
-   - Keep `Planned` for candidates that ended up skip-guarded (note why in the map), for any
-     TC whose PHASE 2.5 status is Partially / Not Covered — copy the reason from
-     `coverage-detail.csv` — for any TC skipped by a PHASE 2.6 decision — copy the gap
-     text from `{run_file}.data_readiness` — **for every `PARTIAL — human step pending` TC**
-     (note `partial (human step: n)` in the map; its test outcome is `Inconclusive`, its
-     `automated_tc_sha256` stays `—`) and for any TC tagged `@unverified-assumption`, copying
-     the assumption from `{run_file}.open_questions`, so the ADO status never overstates the coverage.
-   - **Test outcome per TC** (where the project records outcomes on test points / results —
-     the self-hosted server has no test-plan tools, so there the outcome is recorded as
-     `skipped — no test-plan tools on the self-hosted server` in the map and the summary
-     comment, never claimed):
-     `PASS` → `Passed`; `FAIL` → `Failed`; **`INCOMPLETE` → `Inconclusive`** (or the project's
-     configured non-pass outcome — never `Passed`), with the missing variants and every
-     variant's result in the result comment; **`PARTIAL` → `Inconclusive`** with `human step
-     pending: step {n}` in the result comment; `SKIP` → `Not Applicable` / the project's skip
-     outcome; `NOT_RUN` → left not executed. A TC with one required variant passed and another
-     skipped or not run is therefore never reported as Passed anywhere in ADO.
-     **A TC tagged `@unverified-assumption` is never `Passed` either** — `Inconclusive` with the
-     assumption quoted in the result comment, whatever the test did.
-2. Post ONE summary comment on the User Story: **phase number**, run-2 counts
-   (pass/fail/incomplete/skip/not-run — TC counts, plus variant totals), smoke-gate verdict,
-   number of app bugs found (with TC-IDs), and the `TEST-RUN-REPORT-{feature}.md`
-   (`## Phase {N}` section), `BUG-REPORT-{feature}.md`, `.html` and `.runs/phase-{N}.json` paths
-   (under `reports/{spec_level}{user_story_name}/`).
-3. Update `ADO-MAP.md`: the `AutomationStatus` column (the value Azure DevOps actually accepted,
-   never `Automated` when the template refused it) and the `automated_tc_sha256` column from
-   step 0 — the other columns byte-identical.
-
-ADO failures here degrade gracefully: report what could not be updated — never
-fake a status.
+Azure DevOps publishing and synchronisation are out of scope (constitution QC-17). Under
+`ado_mode = local` — the only mode the invoking command passes — this phase is skipped and
+recorded in the structured return as `not applicable — Azure DevOps out of scope (QC-17)`; no
+work item, test point or map file is read or written. (`scripts/tc-hash.mjs` and its harness
+`selftest-tc-hash.mjs` remain in the folder as the canonical semantic TC hash; they are not
+used under `local`.)
 </ado_closeout>
 
 ---
@@ -2310,16 +2213,8 @@ the test run was. A passing suite is not a passed gate.
 **Environment:** {env} · **Run command:** {exact command}
 
 ### Azure DevOps linkage
-**Mode:** {`linked` | `local`}
-
-*Under `linked`:*
-**Beautified document (published by skill 4):** {path} · source revision `{sha short}` — matches the approved document
-**ADO-MAP.md:** {N} rows / {N} TCs · spot-check `[{TC-ID}]` → work item {id}, Tested-By linked — OK
-{Needs human review notes carried from the beautified document: {TC-IDs} — or "None"}
-
-*Under `local`:* `local — not published to Azure DevOps ({reason: never published | ADO-MAP.md
-older than the approved document | ADO not reachable}); PHASE 5 skipped. Publishing is the
-separate skill 4 and is not required for this run.`
+**Mode:** `local` — Azure DevOps publishing / synchronisation out of scope (QC-17); PHASE 1 and
+PHASE 5 not applicable.
 
 ### Placement Manifest
 {File · Path · Registered · Status table — includes the shared playwright.config.ts (updated / consolidated / created), timeouts.ts, helpers/evidence.ts, helpers/steps.ts, helpers/progress-reporter.ts, helpers/console-guard.ts, helpers/test-data.ts, .gitignore, and every config removed as `removed (consolidated from …)`}
@@ -2388,8 +2283,8 @@ automation coverage (the gate) · **(3)** execution pass rate (in *Second Run �
 | Requirement ID | Requirement (short) | Outcome coverage | Asserted by | Note |
 |---|---|---|---|---|
 {Full / Partial / Missing / **Assumed**; `Assumed` = covered only by an `@unverified-assumption` test.
-Linked-but-not-asserted is `Partial`, never `Full`. IDs validated against {REQ file / approved doc /
-ADO-MAP}; unresolvable IDs listed here, never invented.}
+Linked-but-not-asserted is `Partial`, never `Full`. IDs validated against {spec.md / test plan / approved doc};
+unresolvable IDs listed here, never invented.}
 **Totals:** Full {n} · Partial {n} · Missing {n} · Assumed {n} of {N} requirements
 
 **(2) TC automation coverage**
@@ -2397,7 +2292,7 @@ ADO-MAP}; unresolvable IDs listed here, never invented.}
 |-------|-------------------|-------|----------------------|----------------|-----------------|--------------|
 {Implementation = `full` / `partial (human step: n)` / `manual — not automated` / `pending — not covered for this run`; Static coverage = Fully / Partially / Not Covered from PHASE 2.5; Run 2 status = PASS / FAIL / INCOMPLETE / SKIP / NOT_RUN / `PARTIAL — human step pending`}
 
-**Weighted static coverage (pre-run):** {x}% — target {t}% ({L3 | default}, {mechanism}) — **{PASS | user override | report-only}**
+**Weighted static coverage (pre-run):** {x}% — target {t}% ({constitution | default}, {mechanism}) — **{PASS | user override | report-only}**
 Smoke {x}% · Positive {x}% · Negative {x}% · Full {n} · Partial {n} · None {n} of {N}
 **Δ vs previous measurement:** {±d} pts — improved {TC-IDs} · regressed {TC-IDs} · TCs added/removed {+a/−b} — or "no prior measurement"
 **Repair pass:** {n} TCs strengthened → {before}% → {after}% — or "not needed"
@@ -2417,8 +2312,8 @@ Smoke {x}% · Positive {x}% · Negative {x}% · Full {n} · Partial {n} · None 
 | Total TCs | {N} |
 | Passed / Failed / Incomplete / Skipped / NOT_RUN / Partial | {n} / {n} / {n} / {n} / {n} / {n} (TC counts — each TC-ID once; a PARTIAL TC is never in Passed) |
 | Variants executed | {n} passed / {n} failed / {n} skipped over {N} required variants ({projects} × data variations); attempts {n} |
-| Incomplete TCs | {TC-IDs with their missing variants — or "none"} (published to ADO as Inconclusive, never Passed) |
-| Partial TCs | {TC-IDs with `human step: n` — or "none"} (`PARTIAL — human step pending`: Inconclusive in ADO, never `Automated`, no `automated_tc_sha256`) |
+| Incomplete TCs | {TC-IDs with their missing variants — or "none"} (never counted as Passed) |
+| Partial TCs | {TC-IDs with `human step: n` — or "none"} (`PARTIAL — human step pending`: never Passed — QC-9) |
 | Smoke | {n} TCs — gate: {passed \| healed-then-passed \| FAILED-STOPPED} (fail% {x}%) |
 | Positive | {passed}/{total} |
 | Negative | {passed}/{total} |
@@ -2442,7 +2337,7 @@ Smoke {x}% · Positive {x}% · Negative {x}% · Full {n} · Partial {n} · None 
 **App bugs found:** {N} — {BUG-ids · TC-IDs + one-line titles}
 
 ### DevOps close-out
-{AutomationStatus updates + `automated_tc_sha256` written for {n} TCs (full coverage, PASS, Checkpoint B PASS — never a PARTIAL) + US comment link — or what failed; the other ADO-MAP.md columns untouched}
+not applicable — Azure DevOps publishing / synchronisation out of scope (QC-17)
 
 ### Compliance gates
 **Checkpoint A (pre-run):** {PASS | FAIL | BLOCKED} · **Checkpoint B (final code):** {PASS | FAIL | BLOCKED}
@@ -2490,8 +2385,7 @@ discarded as stale.}
 ## BLOCKED
 
 **Reason:** {unapproved TC doc | missing User Story | ambiguous US name | missing profile key | unresolved test-data precondition (QC chose stop, or provisioning failed and no alternative accepted) | **compliance gate not PASS** (Checkpoint A or B `FAIL`/`BLOCKED`, an applicable check still `unresolved`, or the recorded results are stale)}
-*(Never blocked for Azure DevOps: a missing or stale ADO-MAP.md, an unpublished story, or an
-ADO auth failure all degrade to `ado_mode = local` and the run continues. Never blocked for an
+*(Never blocked for Azure DevOps — it is out of scope (QC-17). Never blocked for an
 ambiguous TC step or an unresolved element either: those are raised as PHASE 2.4 open questions
 and, unanswered, become tagged assumptions or skip-guarded TCs. **An unresolved compliance item IS
 a block for the affected scope** — but only for that scope: independent work still completes and is
@@ -2542,11 +2436,7 @@ Before returning AUTOMATION COMPLETE:
 - [ ] TC document verified `Status: APPROVED` — gate respected
 - [ ] User Story id resolved without Azure (task input → frontmatter → folder name → ask) and
       confirmed with the user before naming any folder; never guessed
-- [ ] **`ado_mode` derived and stated (`linked` / `local` + reason); the run was NEVER blocked,
-      paused, or degraded because the TCs were not published, and the user was NEVER asked to
-      publish/upload to Azure DevOps or to run skill 4**
-- [ ] ADO auth verified under `ado_mode = linked` only; 401/403 dropped to `local` instead of
-      stopping; token never logged or written — N/A under `local`
+- [ ] **`ado_mode = local` stated; no Azure DevOps interaction of any kind (QC-17)**
 - [ ] **Folder layout follows `generate-testing-structure`: new projects under
       `Testing/Automation/` (pages/tests/reports/screenshots/automation-logs); an existing
       automation project reused, never duplicated**
@@ -2554,11 +2444,7 @@ Before returning AUTOMATION COMPLETE:
       and `screenshots_root` carry the same `[SPEC-{spec-name}/]` parent as the TC folder, were
       stated at the start, and never changed or fell back to a flat `US-*` path during the run;
       legacy flat folders read as history only, never written**
-- [ ] **Linkage detected, not required: under `linked` the beautified document + ADO-MAP.md carry
-      `source_sha256` equal to the approved document's hash and one work item was spot-checked
-      (title prefix, Tested-By link); otherwise `local` with the reason stated once**
-- [ ] **No beautify, no TC work-item creation or edit in this run — skill 4 owns both**
-- [ ] **Automation generated from the ORIGINAL approved document, never from the beautified file**
+- [ ] **Automation generated from the approved `TEST-CASES-{feature}.md`, never from a derived copy**
 - [ ] Hierarchy verified/created; Placement Manifest emitted; spec registered in the browser project
 - [ ] POM mandatory rule enforced — zero inline locators in specs; self-check grep reported
 - [ ] **Automation inventory (`<automation_inventory>`): the WHOLE automation root scanned before
@@ -2571,15 +2457,14 @@ Before returning AUTOMATION COMPLETE:
       env vars named after the ID; no literal URL / username, no default value**
 - [ ] **`[HUMAN]` steps: the candidate TC generated up to the first one, coverage
       `partial (human step: n)`, run status `PARTIAL — human step pending` in its own bucket —
-      never PASS, never `Automated`, never an `automated_tc_sha256`**
+      never PASS (QC-9)**
 - [ ] No spec-local UI helper functions; no chaining off exposed page-object locators
 - [ ] Every selector confirmed in source; safe-fix impact checks run before any rename
 - [ ] Self-check passed before first run; no banned patterns
-- [ ] **Open questions (PHASE 2.4) collected from all four sources (ambiguous step, unresolved
-      element, skill 4 `Needs human review`, TBD/assumption markers), de-duplicated to ONE
+- [ ] **Open questions (PHASE 2.4) collected from all three sources (ambiguous step, unresolved
+      element, TBD/assumption markers), de-duplicated to ONE
       question per ambiguity with its TC list — and the run NEVER blocked because of one**
-- [ ] **Every candidate answer carries real evidence (source file / page object / sibling TC /
-      code-rules doc); the learning file was grepped FIRST and a recorded answer reused without
+- [ ] **Every candidate answer carries real evidence (source file / page object / sibling TC); the learning file was grepped FIRST and a recorded answer reused without
       asking; the user was asked with selectable options, recommended one first**
 - [ ] **Every answer written back to `Testing/project-learning.md` AT THE MOMENT IT WAS GIVEN as
       a GENERIC tagged behaviour rule (module/page/element level — never "TC-xx expects …"),
@@ -2595,7 +2480,8 @@ Before returning AUTOMATION COMPLETE:
 - [ ] **Static coverage measured BEFORE the first run: every TC of the approved document classified
       Fully / Partially / Not Covered from the spec source (always-skipped, data-gated, access-only
       and role-variant tests downgraded); weighted % computed overall and per stage**
-- [ ] **Gate verdict recorded with target + source (L3 or default 80 %) + mechanism; below target →
+- [ ] **Gate verdict recorded with target + source (the invoking command's constitution value or
+      default 80 %) + mechanism; below target →
       one repair pass, re-measure, then the user asked — never silently run; override reported**
 - [ ] **Three coverage CSVs written; snapshot/delta in run file; Coverage section rendered**
 - [ ] **Test-data readiness resolved BEFORE the first run: requirements extracted per TC, probed once
@@ -2606,15 +2492,15 @@ Before returning AUTOMATION COMPLETE:
       `## Test Data`; no connection string or credential echoed, logged, or written anywhere**
 - [ ] **`{run_file}.data_readiness` written; every skip guard in the specs traces to a
       readiness decision; decisions recorded in the learning file Q&A**
-- [ ] First run: every failure classified; only test-code defects healed (≤2 iterations); Heal Log kept
-- [ ] No assertion lowered, no skip added to hide a failure, no app bug masked
+- [ ] First run: every failure classified; only test-code defects healed within the QC-9 limits
+      (≤2 iterations, no weakened assertion, no skip to hide a failure, no app bug masked); Heal Log kept
 - [ ] **Results under `{results_root}` (`reports/[SPEC-{spec-name}/]{user_story_name}/`) as the Markdown phase plus `{run_file}` — phase auto-incremented across the nested AND legacy folders, NO prior phase overwritten or deleted; previous-phase links resolve into whichever folder holds them**
 - [ ] **No `--reporter` and no `--config` passed on any CLI command; every stage / run-group command wrote its own stage JSON at the resolved `{stage_json_path}` (mtime later than that command's start) — or, for a watchdog stop, its `{stage}-{group}.watchdog.json` — checked right after each command, run STOPPED on a missing or stale file**
 - [ ] **ONE shared `playwright.config.ts`: config-inventory run before generation; every extra config merged only when reproducible with identical behaviour, its references rewritten, the smoke stage run, and the file deleted only after a re-run listed it under `deletable[]`; every unmergeable config listed under `Configurations not merged` with its blocking setting; no `playwright.us-*.config.ts` left unexplained; reporters additive (line · json · progress-reporter beside the project's own)**
 - [ ] **Timeout policy: every value from `timeouts.ts` (none inline), initial values + `playwright_version` + feature gates recorded in the run file and the Timeout policy section; every `timeout_failure` / watchdog event listed with TC-ID, step, elapsed, expected condition and evidence path; a value raised only where the trace shows the operation legitimately completing after the deadline, recorded `{key, from, to, reason, evidence}` in the run file, the Heal Log and the report; no retry added to absorb a timeout; calibration and the probe reported `NOT_RUN` with the reason when no run happened**
 - [ ] **Watchdog: `PW_GLOBAL_TIMEOUT` set per command; `watchdog.mjs` polled with the group's heartbeat; a stop taken only on `FROZEN` (an open step past its OWN deadline + grace, no progress, no newer worker record, no newer result), never on console silence or a stale stage JSON; on a stop the `completed[]` results kept, `interrupted[]` (`INCOMPLETE`, step + elapsed, `collateral` marked) and `not_started[]` (`NOT_RUN`) named, the group re-queued once, the event classified `timeout_failure`**
 - [ ] **Code craft (`references/code-craft.md` [M] items): every generated / updated test uses `step()` per manual step (validator run with `--require-steps`); positional selectors scoped or justified; no `networkidle` readiness; tags via the details object where the version allows, `[TC-ID]` in the title always; `expect.soft` only for independent checks; created data named by `uniqueName()`; console guard attached; fixtures (when used) wrap `prerequest/` functions; `.gitignore` lines present; page objects and components follow §1-3**
-- [ ] **`{run_file}.merged` keeps every variant (project × data variation) and every attempt in order; a TC is `PASS` only when every `required_variants` entry from the run plan passed, otherwise `INCOMPLETE` (never published as Passed — ADO outcome Inconclusive); TC totals count each TC-ID once; a multi-`[TC-ID]` title is credited to every TC; `phase sections` built from the merge only**
+- [ ] **`{run_file}.merged` keeps every variant (project × data variation) and every attempt in order; a TC is `PASS` only when every `required_variants` entry from the run plan passed, otherwise `INCOMPLETE` (never shown as Passed); TC totals count each TC-ID once; a multi-`[TC-ID]` title is credited to every TC; `phase sections` built from the merge only**
 - [ ] **Progress log created at `{logs_root}/run-progress-{stamp}.log` (`automation-logs/[SPEC-{spec-name}/]{user_story_name}/`), announced at start with the three resolved roots, appended across ALL stages (not just execution), historical logs untouched**
 - [ ] **Test runs executed in background with per-poll chat updates: counts, current TC, elapsed, and a REFRESHED estimated-remaining time**
 - [ ] **Stage order enforced: setup journeys (if any) → smoke → gate → positive → negative; no TC run twice in one phase; a failed setup journey skips its dependent TCs with reason and never counts against the smoke gate**
@@ -2624,7 +2510,7 @@ Before returning AUTOMATION COMPLETE:
 - [ ] **Evidence sanity check done: no PASS image shows a cleaned-up screen; every `evidence_failure` healed by moving the call, not by editing the image or the assertion**
 - [ ] **Smoke gate math reported (fail%, majority classification, action); automation/env majority → heal + smoke re-run (≤2 cycles); app_bug majority → run stopped**
 - [ ] **On a gate stop: run file completed (`stopped-smoke-gate`), phase section appended with Outcome SMOKE GATE FAILED, smoke failures recorded in the bug file, page rendered with the banner and every positive/negative TC as NOT_RUN**
-- [ ] **`@smoke` tags derive only from the TC document's `Smoke:` field**
+- [ ] **`@smoke` tags derive only from the TC document's `Smoke:` field (QC-9)**
 - [ ] Second run clean; run file finalized, `## Phase {N}` appended (earlier sections byte-identical), page rendered by the script with RELATIVE screenshot links and the viewer (no base64, every link resolving), renderer gate PASS and `selftest-run-report.mjs` passing before the page is delivered; INCOMPLETE TCs shown with their missing variants, variant/attempt sub-rows for multi-variant or retried TCs
 - [ ] **`BUG-REPORT-{feature}.md` updated: one entry per `app_bug` of this phase, a History line for every retested bug, `resolved (phase N)` only after a passing retest, `not-checked-this-run` when the TC did not run, no entry rewritten or id reused; the phase's `### Bugs` table cites those ids and the renderer reports no `bug-*` mismatch**
 - [ ] **Every app_bug titled as a plain sentence (`The system doesn't … when …`) — never an
@@ -2632,17 +2518,10 @@ Before returning AUTOMATION COMPLETE:
 - [ ] **Every app_bug has numbered reproduce steps starting at login, in the canonical verbs,
       plus one-sentence Expected and Actual**
 - [ ] Every app_bug has root cause and a screenshot (or states plainly that none was captured)
-- [ ] ADO close-out **under `ado_mode = linked` only**: the resolved automation flag set where
-      earned (if the template rejects `AutomationStatus = Automated`, it stays `Planned` and the
-      custom flag carries the status); summary comment posted; ADO-MAP updated — only the
-      `AutomationStatus` and `automated_tc_sha256` columns, the hash from `scripts/tc-hash.mjs`
-      (harness `selftest-tc-hash.mjs` passing) for TCs that ran full coverage with PASS after
-      Checkpoint B PASS, `—` for every PARTIAL / other TC; `published_tc_sha256`,
-      `Tags (introduced)` and `Suite` never touched.
-      Under `local`: phase skipped silently, recorded as not applicable, no publish suggested
+- [ ] PHASE 5 recorded `not applicable — Azure DevOps out of scope (QC-17)`
 - [ ] Deviations honest and complete
 - [ ] Learning file searched (Index + tag grep, not the whole file) before every ask and before
       selector/environment discovery; recorded and `[similar:]` knowledge reused
 - [ ] Learning file updated: user answers under Automation Model Q&A, automation tricks and env
-      facts as tagged plain-English lines, Index rows updated — no PATs, no code identifiers
+      facts as tagged plain-English lines, Index rows updated — no secrets (QC-7), no code identifiers
 </quality_checklist>

@@ -1,7 +1,8 @@
 # TC format contract — what you read, what you may patch, what you never touch (steps 4, 11)
 
-The document is skill 3's; its field names and shape are a frozen contract parsed by skills 4, 5,
-this skill and the renderer (`html-page.md` §3). Never rename, drop or reorder a field.
+The document is expanded from the approved test plan at `/speckit.tasks`
+(`templates/test-cases-template.md`); its field names and shape are a frozen contract parsed by
+skill 5, this skill and the renderer (`html-page.md` §3). Never rename, drop or reorder a field.
 
 ## The frozen per-TC shape
 
@@ -65,7 +66,7 @@ line starting with `[HUMAN] ` needs a person; it is a frozen marker in the text,
 ## What this skill never touches
 
 `ID`, `Type`, `Locale`, `Requirement`, `Stage`, `Description`, `Smoke`, `Automation Candidate`,
-`Data effect`, `Shared data`, `Tags` (design-owned; skill 4 publishes them), `Data Oracle` values
+`Data effect`, `Shared data`, `Tags` (design-owned — QC-8), `Data Oracle` values
 (a wrong oracle is a PB or a Q, not an edit), the `[HUMAN]` markers, the reference tokens,
 the summary-table design columns, `## Traceability Matrix`, `## Negative Coverage`,
 `## Standards Alignment`, `## Requirement Coverage Score`, `## Manual-Only Scenarios`,

@@ -23,9 +23,9 @@ Story's implementation status. Signals, in order:
    combined ask (implemented / partially / not implemented).
 2. A quick live look: does the feature's entry point (menu item, screen, control) exist at all in
    the app? (One targeted `find` / `snapshot --depth` on the entry screen — not a full walk.)
-3. Optionally, a `link-qc-10-white-box-testing` report for this requirement, if one exists — glob
-   `{white_box_reports}/**/US-{storyID}-*/{storyID}-*-analysis.md` (older reports may sit flat at
-   the root).
+3. The `white_box_reports` input passed by the invoking command — `not applicable` in this
+   preset (QC-17); only when it names a folder, glob
+   `{white_box_reports}/**/US-{storyID}-*/{storyID}-*-analysis.md`.
 
 Classify the story (and, where they differ, each acceptance criterion) as exactly one:
 
@@ -38,12 +38,10 @@ Classify the story (and, where they differ, each acceptance criterion) as exactl
 
 Hard rules:
 
-- A missing screen/control on a NOT-implemented story is **pending implementation**, never an
-  application defect. Keep **requirement/coverage gaps** (spec has no TC) strictly separate from
-  **application defects** (implemented behaviour contradicts the spec) in every table and
-  finding.
-- Never mark a TC `validated`, `enhanced`, or `discrepancy` for functionality that is not
-  implemented.
+- Policy: QC-8 — a missing screen on an unbuilt story is `not-implemented`, never a defect;
+  gaps, defects and pending implementation stay separate in every table and finding; nothing
+  unbuilt is ever `validated`, `enhanced` or `discrepancy`. This file applies it and does not
+  restate it.
 - Record the implementation status (and the evidence for it: the live look, the answer, the
   report path) in the document header and in the structured return. When the document said "not
   yet checked live", this run establishes it.
@@ -89,8 +87,8 @@ wait for (`patch-rules.md` §1b).
   app-validated (human step pending)` with `outcome-check: human step pending` in its stamp
   (§6a); it is never `validated`, `enhanced` or `inferred`, the marker is never reworded away,
   and the TC is listed under "Needs a human run" in the final message.
-- **Observing, and executing only what the TC says.** Do not write code, selectors, or JSON into
-  any deliverable. You may read element identifiers incidentally and record them in the learning
+- **Observing, and executing only what the TC says** (QC-6: no code, selectors or JSON in any
+  deliverable). You may read element identifiers incidentally and record them in the learning
   file's `## Automation Tricks` section, explained in words — but NEVER in the TC deliverables.
 - **Data changes follow §3a**, never a general "read-only in spirit" rule: a TC that creates,
   modifies or deletes data is executed when the run is authorized to, and reconciled.
@@ -101,6 +99,10 @@ wait for (`patch-rules.md` §1b).
 The combined ask (`intake.md` §3) answered "may this run create / modify / delete data on
 {env}?". The answer holds for the whole run and is never re-asked.
 
+> Policy: QC-8 (an explicit yes per run, never on production) and QC-7 (seeding, ownership,
+> cleanup of owned data only, revert through the UI only — never API / database from a validation
+> run; absent fixture data is MISSING and the TC stays draft, never invented). Mechanics below.
+
 - **Which TCs**: those whose `Data effect` is `creates`, `modifies` or `deletes` (a read-only TC
   never mutates, whatever the answer). Production named in the environment note forces "no".
 - **"No"** → each such TC stays `draft — not app-validated (data changes not authorized)`; its
@@ -109,32 +111,31 @@ The combined ask (`intake.md` §3) answered "may this run create / modify / dele
   and the final message names every TC it kept out.
 - **"Yes"** → before the mutating step, identify the record as the UI shows it (name, number,
   key — plain words, no ids from the DOM) and note it in the run log you keep in the chat
-  context; after the TC's Expected Result was checked, **revert through the UI** when a way
+  context; after the TC's Expected Result was checked, revert through the UI (QC-7) when a way
   exists: the TC's own cleanup step, a `TEST-DATA` §5 way, or a learning-file entry (delete the
   created record, restore the modified value, recreate a deleted seeded record only when its
-  exact values are known). Never revert through an API or the database from here.
+  exact values are known).
 - **Outcome per record** → the structured return line `**Data changes:** {n} made · {n} cleaned
   up · {n} left ({record identities})`; every record left behind (no way to revert, or the
   revert failed) is an Environment-blockers line `left in {env}: {record} — created/changed by
   TC-…`. The TC keeps its observed state either way.
-- A TC that needs seeded fixture data that is absent is a `MISSING` data item
-  (`patch-rules.md` §3) and stays `draft` — the run never invents data to make a TC pass.
+- Absent seeded fixture data → the `MISSING` data item is recorded per `patch-rules.md` §3 and
+  the TC stays `draft` with that reason (QC-7).
 
 ## 4. Secondary-locale policy — verify where localization matters
 
-Do NOT fully replay every TC in the secondary locale. Do NOT pay the browser cost twice for
-behaviour that only changes language. But NEVER assume a label is a direct translation —
-accessible names, ordinals, and column ordering have all differed non-obviously between
-locales.
+> Policy: QC-6 (labels in another locale are captured live, never guessed; RTL layout and locale
+> formats are asserted) and QC-8 (when a full secondary-locale re-walk is required and its
+> triggers). This file applies them and does not restate them.
 
-- **ALWAYS capture live** (a targeted `find` — cheap) the secondary-locale display label of EVERY
-  element referenced in any step, and every banner/heading/empty-state text asserted
-  on. Replace skill 3's "(Arabic label: to be captured live)" notes with the captured label. No
-  secondary-locale label in a TC may be a guessed translation.
-- **FULL secondary-locale walk required** (once per screen, reused across that screen's TCs)
-  when the screen involves any of: report content, rendered numbers/dates/counts, RTL layout
-  assertions (panel side, alignment, indentation, column order), or any element whose
-  secondary-locale name is known or observed to not be a direct translation.
+Mechanics:
+
+- **Capture live** with a targeted `find` (cheap) the secondary-locale display label of every
+  element referenced in any step, and every banner / heading / empty-state text asserted on;
+  replace the design's "(Arabic label: to be captured live)" notes with the captured label.
+- When QC-8 requires the **full secondary-locale walk** for a screen, walk it once per screen and
+  reuse the result across that screen's TCs; otherwise do not replay a TC in the secondary locale
+  only because its language changes.
 - A flow confirmed locale-independent (same structure, labels captured) is reused — record that
   fact in the learning file's `## Locale Knowledge` section so future runs skip it too.
 
@@ -149,19 +150,18 @@ locales.
 3. **Fix wrong assumptions**: note whether a control is *removed from the page* or merely
    *emptied*, *hidden* versus *disabled* — these need different assertions. Record the precise
    read-only surface where relevant.
-4. **Observed behaviour that contradicts the spec is a FINDING, not a design decision.** Record
-   both the documented and the observed behaviour: the TC becomes `discrepancy`, its
-   requirement-based Expected Result stays exactly as designed, and a Potential Bug entry
-   (`patch-rules.md` §2, with its screenshot) holds the concise reproduction. Never quietly
-   design around it, and never rewrite the requirement as if the observed behaviour were
-   intended — the spec may be right and the code wrong. (Applies only to IMPLEMENTED
-   functionality — see §1.)
+4. **A contradiction with the spec is a `discrepancy` + Potential Bug, never a rewrite** (policy:
+   QC-8). Mechanics: record both the documented and the observed behaviour; the TC's
+   requirement-based Expected Result stays exactly as designed; the PB entry (`patch-rules.md`
+   §2, with its screenshot) holds the concise reproduction. Applies only to IMPLEMENTED
+   functionality — see §1.
 5. **A scenario the design missed** (an unanticipated negative case, a locale difference, a
-   state the requirement implies but no TC covers) is a **requirement / coverage gap** for skill 3
-   `--revision` — recorded under Open Findings, never added as a TC here (SKILL.md invariant 2).
-6. **Design fields are never touched**: `ID`, `Type`, `Locale`, `Requirement`, `Stage`, `Smoke`,
-   `Automation Candidate`, `Data effect`, `Shared data`, `Tags`, `Description`, the coverage
-   tables. Reference tokens and `[HUMAN]` markers stay as written (§3).
+   state the requirement implies but no TC covers) is a **coverage gap** (policy: QC-8 — the
+   invoking command adds it to the test plan for QC Lead re-approval) — recorded under Open
+   Findings, never added as a TC here (SKILL.md invariant 2).
+6. **Design fields are never touched** (policy: QC-8 lists them; `tc-format-contract.md` lists
+   every field this skill may and may not write). Reference tokens and `[HUMAN]` markers stay as
+   written (§3).
 
 ## 6. Validation states — every TC gets exactly one
 
@@ -179,9 +179,9 @@ observed TC gets its evidence stamp (`patch-rules.md` §2) with `tool: cli` and 
 
 ## 6a. Outcome rule — a command that succeeded proves nothing by itself
 
-*"A successful command alone does not prove the expected result."* A `click` or `fill` that
-returned without error only says the action was issued. Before a TC becomes `validated` or
-`enhanced`:
+Policy: QC-8 — *"a successful command proves nothing"*; `validated` only when the case's own
+expected outcome was observed and recorded. A `click` or `fill` that returned without error only
+says the action was issued. Before a TC becomes `validated` or `enhanced`:
 
 1. **Look for the Expected Result explicitly** — the text the requirement expects (`find`), the
    state of the control it names (`eval`: disabled / hidden / value / count), the row that should

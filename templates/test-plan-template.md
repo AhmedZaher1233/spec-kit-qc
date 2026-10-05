@@ -95,7 +95,7 @@ Manual-only scenarios: [TC-IDs, category and why they cannot be automated].
 | Measure | Numerator / denominator / exclusions | Target | Evidence |
 |---|---|---|---|
 | Requirement design | (fully + 0.5 × partially covered ACs) / in-scope ACs | [policy] | §3–§4 mapping |
-| Code line / branch | per applicable layer; baseline and exclusions explicit | [constitution floors] | native coverage |
+| Code line / branch | per applicable layer; baseline and exclusions explicit | [Development article DEV-3] | native coverage |
 | Automation | (fully + 0.5 × partially automated TCs) / all TCs | [constitution: 80 %, soft block] | skill 5 coverage CSVs |
 | Execution | PASS / FAIL / BLOCKED / NOT RUN / N/A per TC and required variant | all mandatory scope passes | §Execution results |
 
@@ -194,7 +194,7 @@ zero-test, partial or skipped run is not PASS; evidence is captured at the asser
   running locally, approved TEST-CASES / TEST-DATA present, data and access ready, cleanup and
   evidence paths known.
 - **Push / release exit**: validator findings and automation failures fixed and re-run; in-scope
-  ACs pass on required variants; constitution floors met; manual remainder done; named owner records
+  ACs pass on required variants; code coverage targets of the Development article (DEV-3) met; manual remainder done; named owner records
   GO / NO-GO in the Release decision section below.
 
 Defect workflow: [triage owner / cadence, severity vs priority, fix / retest owner, evidence, closure].

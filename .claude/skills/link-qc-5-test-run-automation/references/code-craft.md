@@ -216,13 +216,12 @@ that teardown returns. Teardown that itself times out marks the TC `cleanup_inco
 data prefix (§7) and triggers the post-stage orphan sweep. Inside a long operation the body calls
 `report('rows loaded 40/100')`: a `progress` heartbeat that resets the watchdog clock.
 
-**Calibration after the first run** (`<first_run>`): list every timeout and watchdog event with
-TC-ID, step, elapsed, expected condition and the trace / screenshot path. A value may RISE only
-when that evidence shows the operation legitimately completing after the deadline; a broken
-locator, a failed operation or a frozen step is healed, never re-timed; retries are never added
-to absorb a timeout. Every change goes to `timeouts.ts` with its reason, to the Heal Log
-(category `timeout_failure`, column 7 = the evidence path) and to the report's Timeout policy
-section. A timeout on the first run alone never establishes the required duration.
+**Calibration after the first run** (`<first_run>` 2b): list every timeout and watchdog event with
+TC-ID, step, elapsed, expected condition and the trace / screenshot path, then apply the
+calibration rule of constitution QC-9 (a value rises only on evidence of legitimate completion;
+heal, never re-time, anything else; no retry absorbs a timeout — applied, not restated). Every
+change goes to `timeouts.ts` with its reason, to the Heal Log (category `timeout_failure`, column
+7 = the evidence path) and to the report's Timeout policy section.
 
 **Watchdog** (`scripts/watchdog.mjs`, `<live_progress>`): the outer ceiling is `PW_GLOBAL_TIMEOUT`
 per command; the freeze decision reads the heartbeat only — an open step past ITS OWN deadline +
@@ -250,9 +249,9 @@ finished test; interrupted and never-started TCs are named as such.
   reported in `afterEach` (both on the hook whitelist): `console.error` and `pageerror` entries
   are collected, filtered by the allow-list (`Testing/qa-manifest.json` →
   `automation.consoleAllowList`, regular expressions; defaults: favicon, ResizeObserver loop),
-  attached as `console-errors.txt` and annotated. **An unexpected entry never fails the TC by
-  itself**; the skill lists it under Deviations as a potential defect for the human to classify.
-  Making it fail the TC is a project decision recorded in the learning file.
+  attached as `console-errors.txt` and annotated. An unexpected entry is handled per constitution
+  QC-13 (a deviation, never a TC failure by itself, unless the learning file records a stricter
+  project decision).
 - Trace and video retention per §8; the trace of every failed attempt is the first thing the heal
   loop opens (`npx playwright show-trace`).
 

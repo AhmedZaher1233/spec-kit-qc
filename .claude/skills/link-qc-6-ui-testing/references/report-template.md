@@ -56,6 +56,8 @@ and it exposes the gap between what was covered and what exists.
 Every count above is backed by `./evidence/<page-slug>_<lang>/audit-log.md`
 (one row per action, written as the audit ran) — link it here.
 
+> Policy: constitution "Quality Control" article QC-10 (coverage as real counts; what did not run is "not covered") and QC-13 (evidence). This skill applies it and does not restate it.
+
 Rules for this table:
 - **Every "of" value must be real.** If the true total is unknown (a list whose
   length you can't see), write `unknown` — never imply a total you didn't verify.
@@ -78,7 +80,7 @@ whether the one they care about was covered.
 | 993 | 1px above the 992 breakpoint | Layout only | Clean |
 | 991 | 1px below the 992 breakpoint | Layout only | Bug #09 — filter row overlaps the search box |
 | 768 | Tablet | Layout only | Bug #10 — table extends 40px past the viewport |
-| 390 | Phone | Layout + full audit of the new hamburger menu | Bug #11 — row action buttons are 32px (below the 44px minimum) |
+| 390 | Phone | Layout + full audit of the new hamburger menu | Bug #11 — row action buttons are 32px (below `TOUCH_TARGET_MIN_PX`) |
 
 - The **Why** column justifies each width — breakpoints come from the app's own
   CSS (Step 2D.3), not from a generic list.
@@ -95,12 +97,9 @@ whether the one they care about was covered.
 The regions and states behind those counts — from the Step 2A node inventory
 (design-compared) or the Step 2B self-built checklist (no-design).
 
-**Name the regions in plain language. Never print raw Figma node IDs here**
-(`204:29536`, `1:7162`). They are internal identifiers: not clickable, useless
-to whoever reads the report, and they make the list unreadable. This section
-answers "what was reviewed?", which is answered with names. Keep the node IDs in
-your working notes for the coverage sweep, and surface one only where it is
-actionable — as a clickable link inside the specific bug (see below).
+**Name the regions in plain language** (QC-13: no raw Figma node IDs such as
+`204:29536`). Keep the node IDs in your working notes for the coverage sweep,
+and surface one only as a clickable link inside the specific bug (see below).
 
 Example:
 
@@ -130,21 +129,14 @@ hide.
 
 ## Coverage Limitations
 
-**This section is about the product, not about your tools.** It answers one
-question: *what part of the UI was not checked, and why?* Short bullets, no
-narrative. Omit any bullet that doesn't apply; if none apply, write "None".
+> Policy: constitution "Quality Control" article QC-13 (the report is about the product, never the tooling; no raw internal identifiers). This skill applies it and does not restate it.
 
-Never write tooling diagnostics here. No connector or API names, no "the
-sandbox has no filesystem", no account of what you tried and what failed, no
-internal identifiers. The reader cannot act on any of it, and it reads as the
-auditor making excuses rather than reporting on the product.
-
-If a tooling gap genuinely changed the evidence, state its **consequence in one
-line** and move on — e.g. "Annotated crops unavailable; evidence is the two
-full-page captures, with each bug stating where to look." Before writing even
-that, **verify the gap is real** (check whether the interpreter or library
-actually exists — see Step 7) rather than assuming it; an inaccurate excuse is
-worse than none.
+This section answers one question: *what part of the UI was not checked, and
+why?* Short bullets, no narrative. Omit any bullet that doesn't apply; if none
+apply, write "None". A tooling gap that changed the evidence is one line on its
+consequence — e.g. "Annotated crops unavailable; evidence is the two full-page
+captures, with each bug stating where to look" — written only after checking
+the gap is real (interpreter / library present? see Step 7).
 
 Good bullets look like this:
 
@@ -269,8 +261,8 @@ If this is the first audit of the page, write "First run — no baseline."
 
 **Expected Result (per heuristic/standard):**
 <e.g. "Chevron icons should flip horizontally in RTL layouts per standard RTL
-convention" or "Body text should meet WCAG AA 4.5:1 contrast against its
-background.">
+convention" or "Body text should meet the `CONTRAST_TEXT` ratio of the QC
+configuration table against its background.">
 
 **Actual Result:**
 <What was actually observed, with a measured value where possible, e.g.
@@ -319,10 +311,10 @@ Coverage Limitations instead of omitting it.
 | EN | axe-core 4.10.2 | 62 | 3 → Bug #04, #05, #06 | 41 | 4 — colour on image icons (2), dynamic tab widget (2) |
 | AR | axe-core 4.10.2 | 62 | 5 → Bug #04–#06, #12, #13 | 39 | 4 |
 
-Rules: one bug per violated rule (node count and up to five targets inside the
-bug, `helpUrl` and WCAG criterion cited); `incomplete` rules are never counted
-as violations or as passes — name what was checked by hand; the section is
-about the product (never "the connector could not…").
+Rules: bugs per violation and the treatment of `incomplete` per the QC-10 axe
+mapping (constitution); inside each bug the node count, up to five targets, the
+`helpUrl` and the WCAG criterion; name what was checked by hand; wording per
+QC-13 (about the product).
 
 ## Console & Network Findings
 
@@ -379,9 +371,9 @@ Rules for this section:
 - Reference the evidence image where one helps: `see ./evidence/<…>/q01.png`.
 ````
 
-- **Source** and **Suggested fix** are mandatory lines in every bug (Step 2C
-  Pass 2b): a real `file:line` from the workspace, or `not traced` with the
-  reason — never a guessed path.
+- **Source** and **Suggested fix** are mandatory lines in every bug (QC-10;
+  Step 2C Pass 2b): a real `file:line` from the workspace, or `not traced` with
+  the reason — never a guessed path.
 - Every bug title should be specific enough to stand alone in a bug tracker —
   not "Color issue" but "Header background color does not match approved
   design (`#7B2CBF` implemented vs `#2E75B6` expected)".

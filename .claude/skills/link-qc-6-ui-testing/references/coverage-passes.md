@@ -51,13 +51,12 @@ extra the user has to ask for.
    this as a lower-confidence pass: add it as a bullet under Coverage
    Limitations, and recommend a re-run with segment screenshots or live-URL
    access for full confidence on fine-grained bugs.
-4. **Tag each bug's confidence in the report** (see Step 8): `High` when the
-   value came from computed styles/geometry (Step 2C Pass 2), Figma MCP data
-   (Step 2A), or a pixel-level check (Step 7's color-detection technique);
-   `Medium` when it's a careful visual read of a clear, high-resolution crop;
-   `Low` when it's a judgment call on a subtle or ambiguous difference.
-   If a bug is sitting at `Medium`/`Low` and a live URL is available, go back
-   and measure it via Pass 2 rather than shipping it as a judgment call. This makes run-to-run variability visible
+4. **Tag each bug's confidence in the report** (see Step 8) per the QC-10
+   confidence rule (constitution) — `High` / `Medium` / `Low` as defined there.
+   The sources behind a `High` tag here are Step 2C Pass 2 (computed styles /
+   geometry), Step 2A (Figma MCP data) and Step 7's colour-detection technique;
+   a `Medium` / `Low` bug with a live URL goes back through Pass 2 before it is
+   written up. This makes run-to-run variability visible
    instead of hidden — a `Low`-confidence bug is exactly the kind that might
    not reproduce identically on a second run, and the report should say so
    rather than presenting every bug with equal certainty.

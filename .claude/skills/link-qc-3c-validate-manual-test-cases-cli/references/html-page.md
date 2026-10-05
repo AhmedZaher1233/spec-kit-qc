@@ -1,6 +1,3 @@
-<!-- MIRROR — byte-identical copies live in the sibling skill folders
-     (link-qc-3-generate-manual-test-cases ↔ link-qc-3b-validate-manual-test-cases ↔ link-qc-3c-validate-manual-test-cases-cli,
-     each under references/). Edit all three; scripts/selftest.mjs case 0 sha256-compares every mirrored file. -->
 # The review page — `TC-REVIEW-{feature}.html` is RENDERED, never hand-written
 
 Load at the delivery step of skill 3 and at the write-back step of skill 3b or 3c.
@@ -108,10 +105,9 @@ TEST-DATA without the Environment table or without the Accounts `ID` column rend
 
 ## 4b. Language — one rule
 
-The page language is `--lang` when given, else English. The document's `Review page language:`
-line, a saved learning-file answer, the source language and an existing Arabic sidecar never
-decide it; the line is a **record** of what the last render produced and the skill rewrites it
-after every render. With `lang=en` the renderer checks that the *narrative* (descriptions, steps,
+The page language is `--lang` when given, else English (policy: QC-13). The document's
+`Review page language:` line is a **record** of what the last render produced and the skill
+rewrites it after every render. With `lang=en` the renderer checks that the *narrative* (descriptions, steps,
 expected results, Scope) is English — quoted application labels (`"…"`, `«…»`) are ignored — and
 reports `narrative-not-english` per TC. The sidecar is read only under `--lang ar`.
 
@@ -203,7 +199,7 @@ value to `applied {date}`, `answered {date}` or `declined {date}`, add `- **Resp
 sentence}` under it, and recompute the `**Comments:**` header. Never edit or delete the heading or
 the reviewer's text, never reorder or drop an entry, and never add a comment of your own. A comment
 asking for a change the skill may not make (a design field in 3b / 3c, an approved document without
-authorization) is `answered` with the route (`skill 3 --revision`), never applied silently. An
+authorization) is `answered` with the route (a test-plan change — QC-8), never applied silently. An
 unclear comment becomes an open question (`open-questions.md`) and stays `open`. The same rules
 apply to comment text pasted in chat. Only a confirmed answer reaches the learning file.
 
@@ -239,5 +235,4 @@ renderer change run `node scripts/selftest.mjs --pretty` (golden EN / AR / legac
 rule, the false-PASS guards, exit codes, the data-literal / data-reference cases, the language
 precedence cases, the human-step / Tags case, the reviewer-comments case, the one-shell case and
 the mirror cases must all pass) and regenerate the goldens only for a deliberate change (see
-`scripts/fixtures/MIRROR.md`). The renderer, its harness, its fixtures, both templates and this file
-are mirrored in three skill folders (3, 3b, 3c); copy after every edit. The shell also goes to skill 5.
+`scripts/fixtures/MIRROR.md`). The report shell is shared with skill 5 (self-test case 27).

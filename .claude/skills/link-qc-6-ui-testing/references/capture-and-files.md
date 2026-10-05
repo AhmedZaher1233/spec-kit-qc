@@ -7,14 +7,12 @@ Loaded from Step 2 of SKILL.md. Verbatim detail for the folder layout, naming, v
 Everything is written into the repository so it can be reviewed and committed.
 Create any folder that doesn't exist yet.
 
-**Pick the base directory first.** `<base>` is the project's existing
-QA/testing root if there is one — in a project set up by
-`link-qc-1-generate-update-testing-structure` that is the `Testing/` root recorded in
-`Testing/qa-manifest.json` (so the audit folder is `Testing/UI-Testing/`);
-otherwise a `testing/`, `qa/`, `tests/`, or `e2e/` directory at or near the repo
-root; if there is none, `<base>` is the repo root itself. Everything below is
-written relative to `<base>`, so the audit folder is always exactly one
-`UI-Testing/` deep — never nest a second one.
+**Pick the base directory first.** `<base>` is the `Testing/` root recorded in
+`Testing/qa-manifest.json` (constitution QC-1: one test root per project), so
+the audit folder is `Testing/UI-Testing/`. If the manifest is missing, report
+BLOCKED (`/speckit.constitution` creates it) — never fall back to another
+directory. Everything below is written relative to `<base>`, so the audit
+folder is always exactly one `UI-Testing/` deep — never nest a second one.
 
 ```
 <base>/UI-Testing/
@@ -27,16 +25,8 @@ written relative to `<base>`, so the audit folder is always exactly one
       header.png, filter-row.png, table.png, ...
 ```
 
-**Where the report and its evidence go — follow the project's convention.**
-Before writing anything, check whether the project already has a home for bug
-reports (an existing reports directory, or another QA skill/tool in this repo
-configured to scan one). If it does, write the report there, because downstream
-tooling — bug-tracker sync, retesting, reporting — usually discovers reports by
-scanning that directory. A report written somewhere else is invisible to that
-tooling, and its bugs silently never reach the tracker. Put the evidence
-alongside, next to wherever that convention keeps its screenshots.
-
-If the project has no such convention, use the self-contained default:
+**Where the report and its evidence go** — always the self-contained layout
+under the same `<base>`:
 
 ```
 <base>/UI-Testing/
@@ -77,13 +67,12 @@ belong (the report itself stays about the product).
 
 Rules: times from `new Date().toISOString()` at the moment of the action; a
 state or width that could not be driven is a row with the reason (it feeds
-"Not covered"); never a credential, cookie or token in any cell; the report's
+"Not covered"); never a credential, cookie or token in any cell (QC-7); the report's
 Coverage section links to the log (`see ./evidence/<page-slug>_<lang>/audit-log.md`).
 A second round appends to the same file under a `## Second round` heading.
 
-State in the report where it was written and why, so the location is never a
-surprise. Throughout the rest of this skill, `<reports>/` means the directory
-chosen here and `<evidence>/` its evidence folder.
+Throughout the rest of this skill, `<reports>/` means `<base>/UI-Testing/Reports/`
+and `<evidence>/` its `evidence/` folder.
 
 Naming rules:
 - `<page-slug>` is the Step 1 screen/page label, slugified (lowercase, spaces to

@@ -6,11 +6,11 @@ smoke-gated staged execution (smoke → positive → negative) with live progres
 chat → appends this run's section to the story's TEST-RUN-REPORT-{feature}.md, updates
 BUG-REPORT-{feature}.md, folds the run's machine data into .runs/phase-N.json and renders both
 markdown files into one HTML page with a script → passes a post-run COMPLIANCE CHECKPOINT
-on the final code → and, ONLY if the story is already
-published to Azure DevOps, closes the loop there (the template's automation flag on the work
-items skill 4 created).
-It does NOT beautify or publish TCs — that is link-qc-4-publish-test-cases-azure, a SEPARATE and
-OPTIONAL skill. You are never asked to run it.
+on the final code.
+POLICY: the constitution's "Quality Control" article (passed as qa_standards) is the only QC
+policy source — this file describes the tool and does not restate the rules.
+AZURE DEVOPS: out of scope (QC-17). The run is local; nothing is read from or written to
+Azure DevOps and you are never asked to publish anything.
 
 ============================================================
 INPUT — WHAT YOU MUST PROVIDE
@@ -25,11 +25,13 @@ REQUIRED:
                                    lookup needed. It only names the report/log/screenshot
                                    folders, so a free-text label is fine.
 
-AZURE DEVOPS IS OPTIONAL (auto-detected, never asked): if skill 4 already published these TCs
-  ({Story}/ADO-MAP.md + TEST-CASES-*-beautified.md matching the approved document's hash), the
-  run closes the loop in DevOps at the end. If not — or the map is stale, or ADO is
-  unreachable — the run is simply LOCAL: everything else happens exactly the same, and you are
-  never asked to publish or upload anything.
+PASSED BY /speckit.implement (explicit parameters — each with its fallback):
+  - qa_standards: .specify/memory/constitution.md  — the QC policy (Quality Control article)
+  - ado_mode: local                                — Azure DevOps out of scope (QC-17)
+  - coverage_target / coverage_mechanism            — from the constitution's QC configuration
+                                                     table (team default 80 % / soft block)
+  - smoke_gate                                      — configuration table SMOKE_GATE (30 %)
+  - timeout values where the project defines them   — otherwise timeouts.ts defaults
 
 OPTIONAL:
   3. Environment                 — target test environment (defaults to the automation
@@ -53,10 +55,9 @@ COMPLIANCE GATES: the run passes through TWO mandatory compliance checkpoints, a
       with every look-alike class named and the reason — in automation-inventory.md; the
       validator's pom-duplicate-page rule keeps the gate BLOCKED for any look-alike pair that
       has no decision row, so a second "OrderPage" or a "4-ListingPage.ts" twin cannot ship.
-      A TC step marked [HUMAN] (skill 3: no authorized test interface for an SMS code, an email,
+      A TC step marked [HUMAN] (QC-6: no authorised interface for an SMS code, an email,
       a printed letter …) bounds the automation: the TC is generated up to that step, listed as
-      partial (human step: n) and reported PARTIAL — human step pending — never PASS, never
-      Automated in Azure DevOps.
+      partial (human step: n) and reported PARTIAL — human step pending — never PASS (QC-9).
       Test-data references resolve per ID: [E1] / [E2] are their own environment rows, [A1] is
       that account (credentials by account ID from env vars A1_USER / A1_PASSWORD — never by
       role), [D1] that data item — through helpers/test-data.ts, no literal and no default.
@@ -75,7 +76,7 @@ COMPLIANCE GATES: the run passes through TWO mandatory compliance checkpoints, a
 
 HOW IT RUNS: the skill builds a run plan from your TCs — read-only TCs run in parallel,
 TCs that create/edit/delete or share the same data run one after another (you can steer
-this with the optional "Data effect" / "Shared data" fields from skill 3) — then runs
+this with the optional "Data effect" / "Shared data" fields of the test-case document) — then runs
 smoke → positive → negative with the browser visible, from ONE shared playwright.config.ts
 (Google Chrome, 2 workers). An existing config is updated in place; several are consolidated
 into one — each extra config is merged only when its behaviour can be reproduced, its
@@ -89,7 +90,7 @@ hung worker, keeps every finished result and names interrupted vs never-started 
 OPEN QUESTIONS: an APPROVED document that still reads ambiguously in places is NOT dropped and
   NOT blocked. The skill generates the code for everything else FIRST, then asks you about each
   ambiguity — a vague expected result ("shows the correct order"), an element the source does
-  not settle, a "Needs human review" note from skill 4, a TBD — one question at a time, with
+  not settle, a TBD — one question at a time, with
   2-4 options it actually found (what the code does, what a sibling TC says) and a
   recommendation, so you just pick. The parked TCs are then generated from your answers.
   Anything you do not answer is automated on the best-evidenced reading and clearly marked
@@ -102,7 +103,7 @@ Tricks) for the environment, run settings, known elements, past environment fixe
 you already gave to open questions. Only what is missing is asked. Every answer is saved back
 as a GENERIC rule ("the orders list is sorted newest first…") — not tied to one TC — so the
 same question is never asked again in a later phase, a later run, or another story.
-PATs are never written to it.
+Secrets are never written to it (QC-7).
 
 PREREQUISITES (asked/checked, not guessed):
   - Healthy app environment (URL responding, VPN up) — otherwise the run stops as
@@ -111,15 +112,10 @@ PREREQUISITES (asked/checked, not guessed):
     environment, lists the TCs that would be skipped, and asks you ONCE per gap how to
     handle it — api (an endpoint it found) / ui (an end-to-end setup journey) / db (only if
     you name the env var holding the connection string) / manual (you insert, reply "done")
-    / skip. Created data is deleted after the run unless you add "keep".
+    / skip. Created data is deleted after the run unless you add "keep"; your answer is the
+    authorisation to seed for this run only (QC-7).
 
-OPTIONAL (only when the story is already published to Azure DevOps):
-  - Azure DevOps MCP connected with a read/write PAT (Work Items + Test Management) — cloud
-    or self-hosted server — used ONLY for the close-out. Not connected, or 401/403 → the run
-    continues locally and the close-out is skipped; you are never blocked and never asked to
-    publish. (A 401 / "anonymous access" right after the PAT was created means VS Code needs a
-    full quit + relaunch, not an /mcp reconnect. On the self-hosted server test-point outcomes
-    cannot be written — reported as skipped, fields and comments still updated.)
+AZURE DEVOPS: out of scope (QC-17) — nothing is read from or written to Azure DevOps.
 
 ============================================================
 OUTPUT — WHAT YOU GET
@@ -177,15 +173,7 @@ OUTPUT — WHAT YOU GET
   {automation_root}/helpers/steps.ts · progress-reporter.ts · console-guard.ts · test-data.ts  ← copied from the skill's templates when absent
   + a "Timeout policy" section in the final report: initial values, first-run events, adjustments
     with reasons and evidence, the watchdog probe result — each NOT_RUN with the reason when no run happened
-  Azure DevOps (ONLY when already published): automation flag + automated-test metadata on the
-                TC work items, summary comment on the story; {Story}/ADO-MAP.md (columns
-                TC-ID | ADO Work Item ID | published_tc_sha256 | automated_tc_sha256 |
-                Automation candidate | AutomationStatus | Tags (introduced) | Suite) updated in
-                exactly two columns — AutomationStatus and automated_tc_sha256, the semantic
-                hash from scripts/tc-hash.mjs written only for a TC that ran full coverage with
-                PASS after Checkpoint B PASS (never for a PARTIAL TC); skill 4 keeps Automated on
-                a later publish only while that hash still matches the TC. Not published → this
-                output simply does not appear.
+  Azure DevOps: nothing — publishing / synchronisation is out of scope (QC-17).
   Compliance gate record (in the final report): Checkpoint A + Checkpoint B, each with its
                 scope, the code hash it was taken against, the checks run, findings with file
                 and line, repairs and their verification, and PASS / FAIL / BLOCKED
@@ -195,9 +183,9 @@ OUTPUT — WHAT YOU GET
   Self-test harnesses the skill runs before trusting its scripts (each exits non-zero on mismatch):
     scripts/selftest.mjs (validator, 18 cases incl. the page-object duplicate rule) ·
     selftest-run-report.mjs (23) · selftest-watchdog.mjs · selftest-config-inventory.mjs ·
-    selftest-tc-hash.mjs (the canonical TC hash — same golden as skill 4's harness)
+    selftest-tc-hash.mjs (the canonical TC hash; not used under ado_mode local)
 
-WHEN TO RUN: after a human set Status: APPROVED on skill 3's output. Publishing to Azure
-DevOps (skill 4) is a separate, optional step — run it before or after this skill, or not
-at all. Live validation of the TCs (skill 3b, or its CLI twin 3c) is optional too: an all-"draft" document is
-accepted as it is.
+WHEN TO RUN: at /speckit.implement, after the QC Lead approved the test plan and
+TEST-CASES-{feature}.md carries Status: APPROVED, once the implementation runs locally
+(QC-18). Live validation (skill 3c, QC-8) normally runs first; an all-"draft" document is
+still accepted as it is.

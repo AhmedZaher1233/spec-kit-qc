@@ -31,15 +31,28 @@ exist to prevent that.
 **Host and tools.** Claude Code. The browser is the **Playwright MCP**
 (`mcp__playwright__*`: `browser_navigate`, `browser_evaluate`, `browser_resize`,
 `browser_hover`, `browser_press_key`, `browser_take_screenshot`,
-`browser_console_messages`, `browser_network_requests`), configured by skill 1.
-`browser_evaluate` calls its `function` string with **no arguments** — every
-snippet in the references is `() => …` with its selector inlined; never write one
-that expects a parameter. The **Figma MCP** (`mcp__figma__*`, optional — skill 1
-documents it) gives exact design values for Figma links. Python + Pillow is needed
-only to annotate static images (Step 7). In a project set up by
-`link-qc-1-generate-update-testing-structure`, read `Testing/project-learning.md`
-(`## UI Knowledge`, `## Locale Knowledge`, `### UI Visual QA Model (skill 6)`)
-before asking anything and write confirmed answers back there (Step 9).
+`browser_console_messages`, `browser_network_requests`), configured in the
+project's `.mcp.json`. `browser_evaluate` calls its `function` string with **no
+arguments** — every snippet in the references is `() => …` with its selector
+inlined; never write one that expects a parameter. The **Figma MCP**
+(`mcp__figma__*`, optional) gives exact design values for Figma links. Python +
+Pillow is needed only to annotate static images (Step 7). A required tool that is
+missing is reported BLOCKED with its exact install command; this skill installs
+or repairs nothing (QC-17).
+
+**Policy source.** The constitution's "Quality Control" article — the file passed
+as `qa_standards` (`.specify/memory/constitution.md`) — is the only QC policy and
+configuration source for this audit: QC-10 (visual audit), QC-7 (secrets), QC-12
+(responsive, cross-browser, localization / RTL), QC-13 (evidence), QC-14
+(severity / priority) and the "QC project configuration" table (`BREAKPOINTS_PX`,
+`WCAG_TARGET`, `CONTRAST_TEXT` / `CONTRAST_LARGE_TEXT` / `CONTRAST_UI`,
+`TOUCH_TARGET_MIN_PX`, `BODY_FONT_MIN_PX`, `LOADING_INDICATOR_AFTER_MS`,
+`LANGUAGES`, locale formats, web vitals). Read that article once at the start;
+this skill applies it and does not restate it. No steering, standards or
+project-config file is read or created and no setup skill is invoked (QC-17).
+Read `Testing/qa-manifest.json` and `Testing/project-learning.md` (`## UI
+Knowledge`, `## Locale Knowledge`, `### UI Visual QA Model (skill 6)`) before
+asking anything and write confirmed answers back there (Step 9; QC-1).
 
 Load a reference only when its step runs:
 
@@ -61,11 +74,15 @@ Load a reference only when its step runs:
 
 **Pre-flight order, once:**
 1. Read `<base>/UI-Testing/Learning-UI.md` and `<base>/UI-Testing/Coverage-Index.md`
-   if they exist (Step 9) and, in a skill-1 project, grep `Testing/project-learning.md`
+   if they exist (Step 9) and grep `Testing/project-learning.md` when it exists
    — never re-ask what they already answer.
-2. Work out every missing input below plus the language scope (1A) and the
+2. Take the explicit parameters from the invoking command (`/speckit.implement`):
+   screens / URLs, design reference (if any), `breakpoints`, `locales` and
+   `qa_standards`. Read the Quality Control article of the `qa_standards` file
+   for every threshold this audit applies; never ask for a value it already gives.
+3. Work out every missing input below plus the language scope (1A) and the
    prerequisites (1B), and ask for **all of them in one message**.
-3. Only then open the browser and set the audit viewport (Step 2).
+4. Only then open the browser and set the audit viewport (Step 2).
 
 | # | Input | Accepted formats |
 |---|-------|-----------------|
@@ -83,11 +100,14 @@ back to screenshots only when the Figma MCP is genuinely unavailable.
 
 ### Step 1A — Language scope (always settle it)
 
-Find out which locales the product ships (learning file `## Locale Knowledge`,
-the app's language switcher, or the user) — many portals in this suite ship **EN
-and AR** (AR is RTL), others one locale. In the same single message:
+Find out which locales the product ships (the `locales` parameter and the
+`LANGUAGES` row of the QC configuration table first; then the learning file
+`## Locale Knowledge`, the app's language switcher, or the user) — many portals
+in this suite ship **EN and AR** (AR is RTL), others one locale. In the same
+single message:
 1. **Which language(s) to test.** Each is audited and reported as its own
-   section; an RTL locale is verified independently, never as a mirrored copy.
+   section; an RTL locale is verified independently, never as a mirrored copy
+   (QC-10).
    A single-locale product needs no question — record the locale and move on.
 2. **Which language(s) the design covers.** Ask directly; a missing AR frame is
    common and changes the ground truth for that language.
@@ -106,15 +126,14 @@ say which you are using instead of asking. Then ask only for what is missing:
 
 | Prerequisite | When | Notes |
 |---|---|---|
-| **Login credentials** | app redirects to sign-in | only when the project has no test-credential mechanism |
-| **Role to audit as** | always, for any app with roles | **not optional** — role changes what renders; a lower role produces false "missing component" bugs |
+| **Login credentials** | app redirects to sign-in | only when the project has neither account secret names (`A{n}_USER` / `A{n}_PASSWORD`) nor an attended login (QC-7) |
+| **Role to audit as** | always, for any app with roles | mandatory per QC-10; recorded in the Environment section |
 | **Figma access** | Figma link, no MCP | an exported image of the frame |
 | **Environment** | more than one exists | QA / staging / production |
 | **App version** | not discoverable | recorded in the Environment section |
 
-Credentials: never printed in a message, report, file or log; never committed;
-used in the browser and nowhere else. Screenshots of a signed-in app can carry real
-names and customer data — flag anything sensitive before the report is shared.
+> Policy: constitution "Quality Control" article QC-7 (secrets) and QC-13 (personal data seen in captures). This skill applies them and does not restate them.
+
 Sessions expire: before each major phase (state sweep, width sweep, second round)
 confirm you are still on the intended page, not a sign-in screen.
 
@@ -124,17 +143,16 @@ confirm you are still on the intended page, not a sign-in screen.
 
 Load `references/capture-and-files.md` for the full rules. In short:
 
-- **`<base>`** = the `Testing/` root from `Testing/qa-manifest.json` in a skill-1
-  project (audit folder `Testing/UI-Testing/`); else the project's `testing/` /
-  `qa/` / `tests/` / `e2e/` root; else the repo root. Exactly one `UI-Testing/`
-  deep, never nested.
+- **`<base>`** = the `Testing/` root recorded in `Testing/qa-manifest.json`
+  (QC-1: one test root per project; audit folder `Testing/UI-Testing/`). A
+  missing manifest → report BLOCKED (`/speckit.constitution` creates it); never
+  guess another root. Exactly one `UI-Testing/` deep, never nested.
 - `UI-Testing/Expected-UI/<page-slug>_<lang>.png` + `_sources.md` (one row per
   image, recorded the moment it is saved); `Actual-UI/<page-slug>_<lang>.png`
   (+ `_segments/` for long / dense pages, `_history/` from Step 2E);
   `Reports/UI-Visual-QA-<page-slug>.md` + `Reports/evidence/<page-slug>_<lang>/`
   (crops + `audit-log.md`, one timestamped row per action, written as the audit
-  runs) — unless the project already has a bug-report home that other tooling
-  scans, in which case write there and say so in the report.
+  runs).
 - Slug = the Step 1 label, lowercase, hyphens; `<lang>` = `en` / `ar`; one file
   per language, never shared; reuse an existing Expected-UI image when
   `_sources.md` shows it still matches.
@@ -152,9 +170,8 @@ Load `references/capture-and-files.md` for the full rules. In short:
 ## Step 2A — Figma MCP: ground-truth design data (preferred path)
 
 Tools `get_metadata`, `get_design_context`, `get_variable_defs`, `get_screenshot`
-(`mcp__figma__*`; load deferred ones with `ToolSearch`). No Figma MCP attached
-(skill 1 reports `Figma MCP: not configured`) → say so and use an exported frame
-image; never proceed as if you had design data.
+(`mcp__figma__*`; load deferred ones with `ToolSearch`). No Figma MCP attached →
+say so and use an exported frame image; never proceed as if you had design data.
 1. **Node inventory first** — `get_metadata` / `get_design_context` on the frame:
    every layer is the master checklist for Step 3A; a node with no implemented
    counterpart (or vice versa) is itself a bug.
@@ -176,10 +193,9 @@ then judge every element against the **reference ladder** — Rung 0
 token and file), Rung 2 the component library's rendering, Rung 3 sibling screens
 / the other language, Rung 4 the page's measured self-consistency (counted
 tally), Rung 5 WCAG / touch-target / focus / RTL standards, Rung 6 a task-flow
-walkthrough — plus the mandatory RTL sweep. A single value is never a bug; a
-**contradiction** is. Plausibly deliberate differences become Open Questions with
-measured values; taste is not a finding. State the honest limit (a uniformly
-wrong page has no contradiction to expose). No numeric Match Score: report the
+walkthrough — plus the mandatory RTL sweep. Bug-or-question routing is the QC-10
+rule (constitution), applied through §3 of the reference — never restated here.
+State the honest limit (a uniformly wrong page has no contradiction to expose). No numeric Match Score: report the
 UI/UX Quality Verdict from Step 6's severity counts, and never use
 `Design Conformance` / `Design nonconformance` here.
 
@@ -198,12 +214,14 @@ Load `references/measurement-passes.md`. Pick the highest tier the inputs allow:
 Run the passes **in order**: Pass 1 load integrity (console / network — a 404 is
 the root cause of a missing icon or font) + environment record + DOM inventory
 cross-checked against the 2A / 2B checklist; **Pass 1b axe-core** injected from
-the CDN once per language (WCAG 2.x A/AA + best-practice rules → one bug per
-violated rule, severity from axe impact per `bug-metadata.md`; `incomplete` is
-checked by hand, never counted; CDN blocked → "not run" in Coverage, manual
-checks + `browser_snapshot` instead); Pass 2 computed styles + geometry for every
-inventoried element (exact value pairs, `box` = crop coordinates, real font
-loaded, numeric WCAG contrast, "Elements measured" count); **Pass 2b source
+the CDN once per language (WCAG A/AA rule tags for the `WCAG_TARGET` level +
+best-practice rules → bugs per the QC-10 axe mapping, metadata values from
+`bug-metadata.md`; `incomplete` is checked by hand; CDN blocked →
+"not run" in Coverage, manual checks + `browser_snapshot` instead); Pass 2
+computed styles + geometry for every inventoried element (exact value pairs,
+`box` = crop coordinates, real font loaded, numeric contrast against
+`CONTRAST_TEXT` / `CONTRAST_LARGE_TEXT` / `CONTRAST_UI`, "Elements measured"
+count); **Pass 2b source
 trace** — when the app's source is in the workspace, grep each mismatched
 literal with the element's class to a `file:line` and the token that should
 have been used; every bug carries `Source:` (real file:line or `not traced` +
@@ -213,13 +231,16 @@ the second language with `direction` / `box.x` proof of RTL mirroring. Every
 action (navigate, resize, state, capture, measurement, engine run) is appended
 **as it happens** to `<evidence>/<page-slug>_<lang>/audit-log.md`; the Coverage
 table is derived from that log. Then Step 2D: interactive states (hover, focus ring, active, disabled,
-selected, error), content states (empty, loading, error, overflow — long AR
-strings —, volume), responsive only where the app's own CSS has width media
-queries (1 px either side of each breakpoint + the narrowest supported width;
-diff Pass 2 against the baseline, width-specific checks, full checklist only for
-components that exist only at that width; fixed-width product → confirm, skip the
-narrow sweep, still check 1280 / 1366 / 1920), scroll and stacking. A state that
-cannot be reached is **not covered** with the reason — never implied as passing.
+selected, error), content states (empty, loading — indicator within
+`LOADING_INDICATOR_AFTER_MS` —, error, overflow — long AR strings —, volume),
+responsive at the `breakpoints` passed by the command (`BREAKPOINTS_PX` of the
+configuration table; narrowing needs a recorded justification) plus 1 px either
+side of each breakpoint the app's own CSS declares (diff Pass 2 against the
+baseline, width-specific checks incl. `TOUCH_TARGET_MIN_PX` / `BODY_FONT_MIN_PX`,
+full checklist only for components that exist only at that width; no width media
+queries → confirm fixed-width, record the justified narrowing, skip the narrow
+sweep, still check the desktop range 1280 / 1366 / 1920), scroll and stacking. A
+state or width that cannot be reached is **not covered** with the reason (QC-10).
 State the tier used in the report.
 
 ## Step 2E — Regression check against the previous run
@@ -237,9 +258,9 @@ No previous capture → "First run — no baseline", never an implied check.
 ## Step 3 — Visual Comparison Analysis
 
 Runs for **every** language: against the design, or — in 2B mode — against the
-reference ladder, same dimensions. Do not report text differences unless they
-affect layout, spacing, font rendering or alignment (an untranslated or
-mistranslated AR string is a bug). Check each region against every category:
+reference ladder, same dimensions. Which text differences count as bugs is the
+QC-10 text-differences rule (constitution) — applied, not restated here. Check
+each region against every category:
 
 - **Colors** — page / section / card backgrounds, text (headings, body, captions),
   borders, icons, buttons per visible state, badges / tags / chips.
@@ -274,10 +295,10 @@ Load `references/coverage-passes.md`. **3A** — sweep every region of the 2A / 
 checklist top-to-bottom, every category, never stopping at the first issue in a
 region; the bug list is final only after the sweep. **3B (mandatory)** — re-read
 the list region by region as if for the first time, re-verify every number
-against its source at the moment of writing, tag each bug's **Confidence**
-(`High` = computed styles / Figma / pixel check; `Medium` = careful visual read;
-`Low` = judgment call — measure it via Pass 2 when a live URL exists), and flag a
-full-page-only capture of a dense page as lower confidence. **3C** — a repeated
+against its source at the moment of writing, tag each bug's **Confidence** per
+the QC-10 confidence rule (constitution; a `Medium` / `Low` bug is re-measured
+through Pass 2 when a live URL exists), and flag a full-page-only capture of a
+dense page as lower confidence. **3C** — a repeated
 region (rows, cards, lists) gets a deep template check once plus an outlier scan
 across every visible instance (Pass 2 diff across all instances when live);
 report template bugs once for the region, outliers individually, and state the
@@ -287,13 +308,10 @@ real instance count scanned — never imply full coverage of an unknown total.
 
 ## Step 4 — Severity · Step 4B — Metadata
 
+> Policy: constitution "Quality Control" article QC-14 (Severity 1–4 and Priority P1–P4 definitions, neither defaulted) and QC-10 (visual range Severity 2–4 / P2–P4, the visual severity calibration, the priority-vs-severity rule, the axe impact → Severity / Priority mapping). This skill applies them and does not restate them.
+
 One scale only: the `Severity 1–4` field per bug — never a second Critical /
-Major / Minor scale. Sanity mapping: **Severity 2 - High** missing key
-component, broken layout or RTL flow, WCAG failure that blocks reading;
-**Severity 3 - Medium** wrong brand / link colour, font family or weight, button
-shape, mixed icon style, spacing off > 8 px; **Severity 4 - Low** slight shade,
-spacing ≤ 8 px, small icon size, line-height off 1–2 px. Severity 1 needs a
-crash, outage, data loss or security breach — unreachable by a visual finding.
+Major / Minor scale.
 
 Every bug carries:
 
@@ -306,19 +324,12 @@ Every bug carries:
 ```
 …and, in the body, `**Source:** <file:line | not traced (reason)>` +
 `**Suggested fix:** <one concrete edit>` (Pass 2b). Automated accessibility
-violations map to severity by axe impact (`bug-metadata.md`).
+violations take Severity / Priority from the QC-10 axe mapping and their
+metadata values from `bug-metadata.md`.
 
 `Testing Type` defaults to `Integration Testing` (override only from the
-project's learning file). **Never default to Priority 1 or Severity 1** — both
-must be earned. Priority 1 blocks release / no workaround / serious security or
-data risk; P2 materially affects an important flow with a workaround; P3
-moderate, localized, common UI issue; P4 minor cosmetic. Severity 1 crash /
-outage / loss / breach; 2 major function unavailable or seriously wrong; 3
-partial failure with workaround or meaningful usability defect; 4 cosmetic.
-Priority is urgency, severity is impact — they may differ (page-wide wrong brand
-colour: Severity 3, Priority 2; a broken RTL flow that blocks reading can reach
-P2 / Severity 2). Almost all visual bugs land at Severity 3–4 / Priority 2–4.
-No-design bugs never use `Design Conformance` / `Design nonconformance`.
+project's learning file). No-design bugs never use `Design Conformance` /
+`Design nonconformance`.
 
 ## Step 5 — Match Score (design-compared languages only)
 
@@ -362,8 +373,10 @@ a live URL: **highlight in the DOM before capturing** (4 px solid `#e00000`,
 square corners, ~12 px gap, no fill; number badge only on an overview image;
 remove the highlight afterwards; capture the viewport with the element centred).
 Design side and screenshot-only inputs: the Pillow method in the same style,
-after verifying the interpreter (`Python + Pillow` row of skill 1;
-`/sync-skills --tools` installs the packages); without Python embed the whole
+after verifying the interpreter (`python` / `python3` / `py`; a missing
+interpreter or package is reported with its install command — `/sync-skills
+--tools` installs Pillow + numpy — and never installed by this skill, QC-17);
+without Python embed the whole
 design image / the Figma node screenshot and describe the region in the bug.
 Coordinates come from Pass 2 `box`, never from a thumbnail, when a live URL
 exists (`annotation-fallback.md` is for static images only).
@@ -375,8 +388,8 @@ One Markdown file, **"UI Visual QA Bug Report"**, at
 side), images referenced **relative to the report** (`./evidence/dashboard_en/
 bug01_actual.png`). **Follow `references/report-template.md` section by
 section** — Environment, Coverage with real counts and named widths (each
-backed by and linked to `audit-log.md`), Coverage Limitations (about the
-product, never about tooling), Changes Since Last Run, per-bug blocks per mode
+backed by and linked to `audit-log.md`), Coverage Limitations (QC-13), Changes
+Since Last Run, per-bug blocks per mode
 (with Source / Suggested fix), Correctly Implemented, Consolidated list, Final
 QA Verdict, Accessibility (automated), Console & Network Findings, Open
 Questions. Then tell the user the
@@ -391,10 +404,11 @@ as a rule; "don't know" → carried forward. Move answered questions out of Open
 Questions. Maintain `<base>/UI-Testing/Coverage-Index.md` (every screen of the
 product from routes / nav / design frames, confirmed once; "Screens audited: n
 of N" is the headline) and `<base>/UI-Testing/Learning-UI.md` (scoped, sourced,
-dated rules; supersede, never delete; add mid-audit answers too). In a skill-1
-project also write one tagged plain-English line per confirmed rule into
-`Testing/project-learning.md` (`## UI Knowledge` / `## Locale Knowledge`, and the
-`[type: qa]` line under `### UI Visual QA Model (skill 6)`).
+dated rules; supersede, never delete; add mid-audit answers too). When
+`Testing/project-learning.md` exists, also write one tagged plain-English line
+per confirmed rule into it (`## UI Knowledge` / `## Locale Knowledge`, and the
+`[type: qa]` line under `### UI Visual QA Model (skill 6)`) — its content rules
+are constitution QC-1.
 
 ## Step 10 — Second round (completeness measurement)
 
@@ -410,15 +424,11 @@ dropped first-round finding is a success, recorded plainly.
 
 ## Important Rules
 
-- **Text content differences are not bugs** unless they affect layout, spacing,
-  font rendering or alignment; untranslated / mistranslated AR strings are.
-- **The report is about the product, never about your tooling.** A tooling gap
-  that changed the evidence gets one line on its consequence — after verifying
-  the gap is real.
+- **Policy lives in the constitution** — text-differences rule, mandatory role,
+  severity calibration, confidence tagging, hard-coded-literal rule and axe
+  mapping (QC-10); report about the product not the tooling, no raw internal
+  identifiers, personal data in captures (QC-13). Applied here, never restated.
 - **Audit as the role the user names** and record it in Environment.
-- **Never print raw internal identifiers** (Figma node IDs, selectors, refs) in
-  the report; a clickable Figma link inside the bug that needs it is the only
-  actionable form.
 - **Be precise and reproducible** — exact actual vs expected values (Figma /
   computed over eyeballed), and Steps to Reproduce a stranger could follow.
 - **A failed request is the root cause** of a missing icon, image or font — cite
@@ -431,13 +441,11 @@ dropped first-round finding is a success, recorded plainly.
   links, focus rings and active states; check them when you find it.
 - A design detail that is ambiguous or not visible in the source is "Unable to
   verify — design reference unclear", never a false bug.
-- **When intent is genuinely unclear, ask** — an Open Question with measured
-  values, neither filed nor dropped; taste and preference are not findings.
+- **Bug, Open Question or nothing** is decided by constitution QC-10, applied
+  through `no-design-audit.md` §3 — never restated here.
 - **Close the loop**: every answer, including "intentional", reaches
   `Learning-UI.md` (and the project learning file) so the false positive never
   recurs.
-- **Don't guess tracker field values** — on a rejection, copy the value an
-  existing work item uses and record it in the learning file (Step 4B).
 - A request to **re-check or re-run** an audit done in this conversation is a
   fresh Step 3B pass over the same material, not a restart of Steps 1–2 — unless
   the page or design actually changed.

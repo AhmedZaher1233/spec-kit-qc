@@ -1,10 +1,13 @@
-<!-- MIRROR — byte-identical copies live in the sibling skill folders
-     (link-qc-3-generate-manual-test-cases ↔ link-qc-3b-validate-manual-test-cases ↔ link-qc-3c-validate-manual-test-cases-cli, each under references/). Edit all three;
-     scripts/selftest.mjs case 0 sha256-compares every mirrored file. -->
 # Open questions — search first, ask in one shape, never act on an unanswered recommendation
 
 Load whenever something is missing, ambiguous or contradictory and a human answer would change
 what you write. Applies to skill 3 (design), skill 3b (live validation through Playwright MCP) and skill 3c (live validation through playwright-cli) alike.
+
+> Policy: constitution "Quality Control" article QC-1 (ask before assuming; one batch with a
+> recommended answer; nothing proceeds on an unanswered recommendation) and QC-3 (open questions:
+> evidence order, 2–3 options with one Recommended, never re-ask, business-rule gaps go to
+> /speckit.clarify, `Q-n` ids never reused). This file holds the search mechanics and the
+> question shape and does not restate the policy.
 
 ## 1. Search before asking
 
@@ -64,10 +67,9 @@ entry with `Status: answered {date}` and the answer appended (`- **Answer:** …
   under this skill's `#### Questions and Answers`; project-wide answers (base URL per
   environment, roles, module names, implementation status, review-page language) also under
   `## Project Knowledge`.
-- Only a confirmed answer is reused later without re-asking. A recommendation the user did not
-  answer is **not** written to the learning file at all.
-- A confirmed answer that contradicts an older entry replaces it (never two conflicting lines).
-- Credentials are never a question written anywhere; the base URL is stored only as `[type: env]`.
+- Only a confirmed answer is reused later without re-asking. What may be written back (never an
+  unanswered recommendation; a contradicting confirmed answer replaces the older entry) is QC-1.
+- Credentials are never a question written anywhere (QC-7); the base URL is stored only as `[type: env]`.
 
 ## 5. Freshness (3b and 3c)
 

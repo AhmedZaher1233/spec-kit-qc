@@ -35,7 +35,7 @@ the test plan.
 
 | File | Strategy | Content |
 |---|---|---|
-| `templates/constitution-template.md` | append | Quality Control article: roles (QC-0), authority, surfaces, the single review point, traceability, requirements quality, test design, test data, live validation, automation, UI audit, coverage, environments, evidence, defects, release, exceptions, retained skills, stage map (QC-18), configuration table |
+| `templates/constitution-template.md` | append | Development placeholder article (DEV-1 … DEV-7, filled by the development team: test ownership, dev-test quality, code coverage, CI, code review, local run, testability asks) + Quality Control article: roles (QC-0), authority, surfaces, the single review point, traceability, requirements quality, test design, test data, live validation, automation, UI audit, coverage, environments, evidence, defects, release, exceptions, retained skills, stage map (QC-18), configuration table |
 | `templates/plan-template.md` | append | plan.md "Testing Strategy" + "QC Requirements for Development" |
 | `templates/tasks-template.md` | append | Phase T (testability asks), per-story developer tests, Phase V (local run, validation, automation, fix loop, results, push) |
 | `templates/test-plan-template.md` | new | the test plan — sections 1–11, Approval Record, result sections filled at implement |
@@ -43,9 +43,9 @@ the test plan.
 | `templates/test-data-template.md` | new | `TEST-DATA-<feature>.md` — environments `[E]`, accounts `[A]` by secret name, data items `[D]` |
 | `templates/qa-manifest-template.json`, `templates/project-learning-template.md` | new | the two project files the retained skills read |
 | `commands/speckit.constitution.md` … `speckit.implement.md` | wrap | the core command stays byte-for-byte (`{CORE_TEMPLATE}`); the QC steps follow it (tasks and implement also add a gate before it) |
-| `.claude/skills/link-qc-3c-validate-manual-test-cases-cli` | retained | live validation through playwright-cli |
-| `.claude/skills/link-qc-5-test-run-automation` | retained | Playwright automation, compliance validator, watchdog, run report |
-| `.claude/skills/link-qc-6-ui-testing` | retained, optional | visual audit through the Playwright MCP |
+| `.claude/skills/link-qc-3c-validate-manual-test-cases-cli` | retained, trimmed | live validation through playwright-cli; policy text replaced by pointers to QC-n; MCP-comparison mode, `--republish` and skill-1/3/3b references removed |
+| `.claude/skills/link-qc-5-test-run-automation` | retained, trimmed | Playwright automation, compliance validator, watchdog, run report; policy text replaced by pointers to QC-n; Azure DevOps linkage / close-out reduced to `ado_mode: local` |
+| `.claude/skills/link-qc-6-ui-testing` | retained, optional, trimmed | visual audit through the Playwright MCP; thresholds read from the configuration table (`BREAKPOINTS_PX`, `WCAG_TARGET`, `CONTRAST_*` …); severity/priority rules point to QC-10 / QC-14 |
 | `.claude/skills/link-qc-md-to-html` | new | one converter for every QC Markdown file, built from the existing renderers |
 | `snippets/CLAUDE-md-qc-section.md` | optional | short agent orientation for work outside the commands |
 
@@ -78,12 +78,15 @@ specify preset resolve test-plan-template      # check composition
 
 Then:
 
-1. Copy the four retained skills from `.claude/skills/` into the project's `.claude/skills/` (or run
-   `/sync-skills link-qc-3c-validate-manual-test-cases-cli link-qc-5-test-run-automation link-qc-6-ui-testing`
-   from the canonical repo and copy `link-qc-md-to-html` from this preset). Install playwright-cli
-   with `/sync-skills --tools` when the project has a browser surface.
-2. Run `/speckit.constitution` once: the Quality Control article is merged (existing articles are
-   preserved), the QC Lead fills the configuration table, and the two `Testing/` files are created.
+1. Copy the four retained skills from this preset's `.claude/skills/` into the project's
+   `.claude/skills/`. The copies here are the **trimmed** versions (policy removed, pointers to the
+   constitution); `/sync-skills` would re-download the untrimmed canonical versions, so use it only
+   for `--tools` (playwright-cli) until the canonical repo carries the trimmed skills.
+2. Send `templates/constitution-template.md` to the development team: its `## Development` article
+   is a placeholder (DEV-1 … DEV-7) they fill with the developer-owned rules; the Quality Control
+   article holds no developer rules. Then run `/speckit.constitution` once: both articles are merged
+   (existing articles are preserved), the QC Lead fills the configuration table, and the two
+   `Testing/` files are created.
 3. Optionally append `snippets/CLAUDE-md-qc-section.md` to the project's `CLAUDE.md`.
 4. Secrets: `E1_URL`, `A{n}_USER` / `A{n}_PASSWORD` in the secret store or environment — never in files.
 

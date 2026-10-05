@@ -1,16 +1,13 @@
-<!-- MIRROR — byte-identical copies live in the sibling skill folders
-     (link-qc-3-generate-manual-test-cases ↔ link-qc-3b-validate-manual-test-cases ↔ link-qc-3c-validate-manual-test-cases-cli, each under references/). Edit all three;
-     scripts/selftest.mjs case 0 sha256-compares every mirrored file. -->
 # Project learning file — skills 3, 3b and 3c — load at the learning-file step
 
-The shared read-first / ask-second / write-back protocol, the tag vocabulary and the file
-skeleton are defined ONCE, in
-`../link-qc-1-generate-update-testing-structure/references/project-learning-protocol.md`
-(template: `../link-qc-1-generate-update-testing-structure/assets/project-learning.template.md`).
-Read that file when it is present — it is authoritative. This page holds only what is specific
-to the three TC skills, plus the short fallback below for a project that synced one of them alone.
+> Policy: constitution "Quality Control" article QC-1 (precedence spec → constitution → approved
+> test plan → learning file; the file is read before anything is asked; only confirmed facts are
+> written back, each with source and date — never a secret, selector, code identifier or
+> requirement text verbatim) and QC-7 (secrets). This file holds only the read / write mechanics
+> and the tag vocabulary the TC skills use, plus the skeleton below (`/speckit.constitution`
+> creates the file — QC-18).
 
-`{learning_file}` is the plain-English knowledge base shared by ALL QA skills (1-11, 3b and 3c): what
+`{learning_file}` is the plain-English knowledge base shared by all QC skills and commands: what
 the system does (modules, rules, roles), how to reach screens, common flows, UI behaviour, test
 data, EN/AR differences, automation tricks, and answered questions — separated per model. It
 exists to progressively eliminate rediscovery and re-asking across stories.
@@ -36,10 +33,9 @@ data, locale differences, tricks) go to the shared sections, not to a model sect
 - Before asking the user anything, grep `#### Questions and Answers` of **both** model sections
   for the question's keywords (e.g. `base URL`, `role`, `environment`, `implemented`) and the
   shared `[type: env]` lines — then follow `open-questions.md` §1.
-- Review-page language is **never** read from the learning file: the page is English unless this
-  run's task input asks for another language (`--lang ar` or an explicit sentence). An old
-  "Output language for Arabic requirements" line, if present, is ignored and mentioned once in the
-  final message ("pass `--lang ar` to render Arabic").
+- Review-page language is **never** read from the learning file (QC-13 — the run's task input
+  decides). An old "Output language for Arabic requirements" line, if present, is ignored and
+  mentioned once in the final message ("pass `--lang ar` to render Arabic").
 - Test interfaces for out-of-browser outcomes (mail sandbox, SMS test provider, OTP test hook,
   notification API, job trigger): grep `test interface`, `sandbox`, `OTP`, `SMS`, `mail` in the
   `[type: env]` lines and the `## 0. Environment` tables of the project's other TEST-DATA files
@@ -58,10 +54,10 @@ data, locale differences, tricks) go to the shared sections, not to a model sect
   `#### Questions and Answers`:
   `- [module: X] [type: qa] **Q (skill 3 | skill 3b | skill 3c, {YYYY-MM-DD}):** … — **A:** … (confirmed by user {date})`.
   Project-wide answers (base URL per environment, roles, module names, implementation status)
-  are ALSO added to `## Project Knowledge`. **Credentials are NEVER written.** An unanswered
-  recommendation is never written. The review-page language is **not** written — it is decided
-  per run by the task input and recorded only in the document's `Review page language:` line.
-  The learning file itself is always English.
+  are ALSO added to `## Project Knowledge`. Credentials are never written (QC-7); an unanswered
+  recommendation is never written and the file is always English (QC-1). The review-page
+  language is **not** written — it is recorded only in the document's `Review page language:`
+  line (QC-13).
 - A test-interface answer (which authorized mail sandbox / SMS provider / OTP hook / notification
   API / job trigger exists for an environment, or that none does) is written once as a
   `[type: env]` line under `## Project Knowledge` — the service kind and where it is reached in
@@ -71,12 +67,11 @@ data, locale differences, tricks) go to the shared sections, not to a model sect
   skill's `#### Knowledge`. Grep the same tags first; update or dedupe instead of appending twins.
 - Test data: an item confirmed `READY` live that the file did not know → one `[type: data]` line
   under `## Test Data` (`Fixture "{plain name}" — {what exists}; environment {env}; seen live on
-  {date}`). `MISSING` / `IMPOSSIBLE` / `UNKNOWN` statuses are NOT written here — skill 5 records
-  the final outcome.
+  {date}`). `MISSING` / `IMPOSSIBLE` / `UNKNOWN` statuses are not written here (QC-1).
 - A module / page / element that behaves like an existing one → add `[similar: …]` on both
   entries instead of copying text; update the `## Index` row for every module touched.
 - Update any entry contradicted by live observation or by the spec — never leave conflicting or
-  duplicate entries. Specs and steering always win.
+  duplicate entries. The spec and the constitution always win (QC-1).
 - Store learned KNOWLEDGE in your own words, not requirement text. "To open Order Details: open
   Orders → open the order → select the Details tab" belongs here, and so does "An order cannot be
   closed while it has open shipments (source: US-1234 AC-3)". Never paste "The system shall …"
@@ -86,7 +81,7 @@ data, locale differences, tricks) go to the shared sections, not to a model sect
   under `## Automation Tricks`, each explained in words on the same line (they help skill 5).
   They must NEVER appear in the TC deliverables.
 
-## Fallback — skill 1 not present in this project
+## Fallback — the file does not exist yet
 
 File missing → create it with this skeleton and keep the language simple; it is a knowledge
 base, NOT another specification:
@@ -119,5 +114,5 @@ base, NOT another specification:
 
 Each `### … Model` subsection carries `#### Knowledge` and `#### Questions and Answers`.
 A legacy `.planning/project-learning.md` is merged into the matching sections of the new file
-and then no longer used. Then tell the user to run `/link-qc-1-generate-update-testing-structure`
-(audit first, then repair) so the foundation is created properly.
+and then no longer used. Say in the final message that the file was created (normally
+`/speckit.constitution` creates it — QC-18); no foundation-setup skill is invoked (QC-17).

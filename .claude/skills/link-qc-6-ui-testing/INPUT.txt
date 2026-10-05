@@ -28,30 +28,45 @@ OPTIONAL FLAGS / ARGUMENTS:
   --screen <label>                       Screen label when only one screen is audited.
   scope                                  Specific components to focus on (default: full audit).
 
+PASSED EXPLICITLY BY THE INVOKING COMMAND (/speckit.implement, optional UI audit step):
+  screens / URLs                         The screens the test plan marked for a visual audit.
+  design reference                       Figma URL / design screenshots / reference URL, if any.
+  breakpoints                            BREAKPOINTS_PX from the constitution's QC configuration
+                                           table (the app's own CSS breakpoints add ±1 px widths).
+  locales                                LANGUAGES (code + direction) from the configuration table.
+  qa_standards                           .specify/memory/constitution.md — its "Quality Control"
+                                           article is the ONLY policy / threshold source (QC-7,
+                                           QC-10, QC-12, QC-13, QC-14, configuration table). No
+                                           steering or standards file is read; nothing is asked
+                                           that this file already answers.
+
 ASKED DURING THE RUN — ONE message, before the browser opens (Step 1A/1B):
   4. Language(s) to test and language(s) the design covers (a single-locale product skips this)
-  5. Role to audit as                    — always, for any app with roles (role changes what renders)
-  6. Login credentials                   — only when the project has no test-credential mechanism;
-                                           never printed, never written to any file
+  5. Role to audit as                    — always, for any app with roles (mandatory per QC-10)
+  6. Login credentials                   — only when the project has neither account secret names
+                                           (A{n}_USER / A{n}_PASSWORD) nor an attended login (QC-7)
   7. Environment (QA / staging / prod) and app version when not discoverable
   8. Figma access                        — only for a Figma link with no Figma MCP attached:
                                            an exported image of the frame
   9. Whether narrow widths are in scope  — only when the app's CSS has no width media queries
+                                           (a confirmed fixed-width product is a justified narrowing
+                                           of BREAKPOINTS_PX, recorded in Coverage)
 
-PREREQUISITES (checked by link-qc-1-generate-update-testing-structure):
-  - Playwright MCP server in .mcp.json   — required for live URLs (validate-setup row "Playwright MCP")
-  - Figma MCP                            — optional, Figma designs only (row "Figma MCP";
-                                           mcp-setup.md §2c: remote OAuth server, no token in files)
+PREREQUISITES (never installed by this skill; a missing required tool is reported BLOCKED with
+its exact install command — constitution QC-17):
+  - Playwright MCP server in .mcp.json   — required for live URLs
+  - Figma MCP                            — optional, Figma designs only (remote OAuth server, no
+                                           token in files)
   - Python + Pillow (+ numpy)            — optional, static-image annotation fallback only
-                                           (row "Python + Pillow"; /sync-skills --tools installs the
-                                           packages when Python exists). Live URLs need no Python.
+                                           (/sync-skills --tools installs the packages when Python
+                                           exists). Live URLs need no Python.
 
 ============================================================
 OUTPUT — WHAT YOU GET
 ============================================================
 
-Written under <base>/UI-Testing/ (<base> = the Testing/ root from qa-manifest.json in a
-project set up by skill 1; otherwise the project's testing root or the repo root):
+Written under <base>/UI-Testing/ (<base> = the Testing/ root from Testing/qa-manifest.json —
+QC-1, one test root per project; a missing manifest → BLOCKED, never another root):
 
   Expected-UI/<page-slug>_<lang>.png      approved design images + _sources.md (one row per image)
   Actual-UI/<page-slug>_<lang>.png        implementation full-page capture (+ _segments/ per region,
@@ -73,9 +88,6 @@ project set up by skill 1; otherwise the project's testing root or the repo root
   Learning-UI.md                          confirmed UI rules from answered questions (Rung 0 next run)
   Coverage-Index.md                       which screens of the product were audited, which never
 
-When the project already has a bug-report home that other tooling scans, the report and its
-evidence go there instead and the report says so.
-
 Also updated: Testing/project-learning.md (UI Knowledge / Locale Knowledge facts and the
 `### UI Visual QA Model (skill 6)` Q&A) when the file exists.
 
@@ -89,7 +101,13 @@ WHEN TO RUN IT
   - Re-run on the same screen → regression check against the previous capture and report.
   - "What have we covered?" / "what's next?" → Coverage-Index.md answers it.
 
-HARD RULES: never print or store a credential; flag personal data seen in captures before the
-report is shared; the report is about the product, never about tooling; never Priority 1 /
-Severity 1 by default; no-design bugs never use "Design Conformance" / "Design nonconformance";
-the second round (Step 10) measures completeness — it is never promised as "more bugs".
+POLICY: constitution "Quality Control" article — QC-7 (secrets), QC-10 (visual audit: bug vs
+question, severity calibration, mandatory role, text differences, confidence, axe mapping,
+hard-coded literals), QC-12 (responsive / localization), QC-13 (evidence; report about the
+product never the tooling; no raw internal identifiers; personal data in captures), QC-14
+(severity / priority) and the QC project configuration table — read from the qa_standards
+file. This skill applies it and does not restate it.
+
+HARD RULES (skill-specific): no-design bugs never use "Design Conformance" / "Design
+nonconformance"; the second round (Step 10) measures completeness — it is never promised as
+"more bugs".

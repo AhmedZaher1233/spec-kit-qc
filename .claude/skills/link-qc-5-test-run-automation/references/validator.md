@@ -28,8 +28,8 @@ Paths resolve CLI flag → `Testing/qa-manifest.json` (`paths.tests`, `paths.pag
 `paths.automationRoot`) → canonical `Testing/Automation/*`. Scope is `--files`, else every spec
 under the tests path.
 
-`--tc-ids` / `--req-ids` take a comma list or a file (the approved TC document, `ADO-MAP.md`, the
-REQ file — IDs are read out by token). **Without them the ID rules do not run**; they land in
+`--tc-ids` / `--req-ids` take a comma list or a file (the approved TC document, spec.md or the
+test plan — IDs are read out by token). **Without them the ID rules do not run**; they land in
 `notRun[]`, never in a PASS. The script never derives or invents an ID.
 
 `--inventory <automation-inventory.md>` is the story's page-object decision table

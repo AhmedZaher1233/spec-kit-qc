@@ -106,7 +106,9 @@ wrong ordering — before you spend any effort on their styling.
 Contrast, focus and target size are measured by hand in the passes below; the
 rest of WCAG (accessible names, ARIA validity, form labels, landmark structure,
 heading order, duplicate ids, keyboard traps in widgets) is a rule engine's job.
-Run **axe-core** in the page once per language, resting state, before Pass 2:
+The target level is `WCAG_TARGET` in the constitution's QC configuration table;
+the rule tags below cover WCAG 2.x A/AA. Run **axe-core** in the page once per
+language, resting state, before Pass 2:
 
 ```js
 // browser_evaluate — load axe-core from the CDN, then run it
@@ -136,14 +138,14 @@ Run **axe-core** in the page once per language, resting state, before Pass 2:
 ```
 
 Rules:
-- Every violation becomes **one bug per rule** (not per node) with the node count
-  and up to five example targets; severity from axe `impact` per
-  `bug-metadata.md` ("Automated accessibility findings"); the `helpUrl` and the
-  WCAG criterion go in the bug; `Confidence: High`. Contrast violations that
-  Pass 2 already measured are merged into that bug, never duplicated.
-- `incomplete` results are **not** bugs — they are the rules axe could not decide;
-  list their count in the Accessibility section and check the ones that matter
-  by hand (colour on images, dynamic widgets).
+- Bugs per violation, Severity / Priority and the treatment of `incomplete`
+  follow the QC-10 axe mapping (constitution); metadata values come from
+  `bug-metadata.md` ("Automated accessibility findings"). Each bug carries the
+  node count, up to five example targets, the `helpUrl` and the WCAG criterion.
+  Contrast violations that Pass 2 already measured are merged into that bug,
+  never duplicated.
+- `incomplete` results: list their count in the Accessibility section and check
+  the ones that matter by hand (colour on images, dynamic widgets).
 - Record `rulesRun`, `violations`, `passes`, `incomplete` and `axeVersion` in the
   report's **Accessibility (automated)** section and the Coverage table.
 - Loader returned `blocked` (CSP, offline, proxy): say so in one Coverage
@@ -223,8 +225,10 @@ Two extra things this pass gives you for free:
   Use it instead of the thumbnail-estimation workflow whenever a live URL is
   available; that workflow exists for screenshot-only inputs.
 - **Exact WCAG contrast ratios** — compute them from the real `color` /
-  `backgroundColor` values rather than eyeballing "this looks low contrast".
-  This makes every contrast finding in Step 2B numeric and `High` confidence.
+  `backgroundColor` values rather than eyeballing "this looks low contrast",
+  and compare against `CONTRAST_TEXT` / `CONTRAST_LARGE_TEXT` / `CONTRAST_UI`
+  from the QC configuration table. This makes every contrast finding in Step 2B
+  numeric and `High` confidence.
 
 **Record how many elements this returned** — that number is the "Elements
 measured" figure in the report's Coverage table, and it is what makes coverage
@@ -266,10 +270,9 @@ never for a remote-only URL), trace every Pass 2 mismatch before writing it up:
    matches, write `**Source:** not traced (value not found in the workspace —
    likely computed at runtime / third-party CSS)` and leave Suggested fix as the
    CSS-level change. A wrong file:line costs the developer more than none.
-5. **Hard-coded literal where a token exists is a finding on its own**
-   (`Classification: UI/Layout Issue`, Severity 4 when it renders correctly
-   today): it is the root cause behind "this one screen looks different".
-   Report it once per file:line, never once per element.
+5. **Hard-coded literal where a token exists** — reported as its own finding
+   under the QC-10 hard-coded-literal rule (constitution; `Classification:
+   UI/Layout Issue`). Cite the token file from step 1 as the expected side.
 
 Record the number of bugs traced vs not traced in the Coverage table
 ("Source traced: 9 of 11 bugs").
@@ -353,8 +356,9 @@ The same layout behaves differently with different data. Check each state that
 the page can actually reach:
 - **empty** — filter to zero results: is there a proper empty state, or a bare
   blank area?
-- **loading** — skeleton/spinner styling, and whether layout shifts when real
-  content replaces it
+- **loading** — skeleton/spinner styling, whether the indicator appears within
+  `LOADING_INDICATOR_AFTER_MS` (QC configuration table), and whether layout
+  shifts when real content replaces it
 - **error** — a failed load (offline, filtered to an error case): is the error
   presented in the page's own visual language?
 - **overflow / long content** — a long title, a long AR string, a long tag: does
@@ -365,8 +369,12 @@ the page can actually reach:
 
 ### 3. Responsive behaviour
 
-**First, establish whether responsive is even in scope.** Auditing phone widths
-on a product that was never built for them manufactures bugs nobody asked for.
+> Policy: constitution "Quality Control" article QC-12 (responsive checks, browser scope) and the configuration key `BREAKPOINTS_PX` (narrow only with justification), passed by the invoking command as `breakpoints`. This skill applies it and does not restate it.
+
+The width list is the `breakpoints` parameter. **Then establish what the app
+itself declares** — auditing phone widths on a product that was never built for
+them manufactures bugs nobody asked for, and the app's own breakpoints are where
+its layout actually changes.
 
 Read the app's own stylesheets for width media queries:
 
@@ -385,10 +393,11 @@ Read the app's own stylesheets for width media queries:
 }
 ```
 
-- **Breakpoints found** → responsive is in scope. Use these, not invented
-  widths (next section).
-- **No width media queries at all** → the product is not responsive by design.
-  Confirm with the user, then **skip the narrow-width sweep entirely** and
+- **Breakpoints found** → responsive is in scope. Add 1 px either side of each
+  (next section) to the `breakpoints` list; never invent other widths.
+- **No width media queries at all** → the product may be fixed-width by design.
+  Confirm with the user; a confirmed fixed-width product is the justified
+  narrowing of `BREAKPOINTS_PX`: **skip the narrow-width sweep entirely** and
   record it in Coverage as "Responsive: not applicable — fixed-width product
   (confirmed)". Do not file bugs for layouts breaking at phone widths.
   **But still check the realistic desktop range** (e.g. 1280 / 1366 / 1920) —
@@ -409,7 +418,8 @@ layout and the narrow layout — both fine — while the failure sits at 991.
 ```
 
 So for each breakpoint found, test **1px either side of it** (991 and 993),
-plus the smallest width the product claims to support. The
+plus every width of the `breakpoints` list (its smallest value is the narrowest
+supported width). The
 **standard audit viewport** (Step 2) is the baseline and is already covered;
 skip any width equal to it.
 
@@ -461,7 +471,11 @@ gets the full treatment.**
   component: audit it in full, per the scope rule above, and record it as its
   own region in the Coverage table.
 - **Touch targets** at the narrowest supported width — interactive elements
-  should be ≥44×44px; measure from `getBoundingClientRect`.
+  must meet `TOUCH_TARGET_MIN_PX` (QC configuration table) on both sides;
+  measure from `getBoundingClientRect`.
+- **Body font size** at the narrowest supported width — computed `fontSize` of
+  body text must meet `BODY_FONT_MIN_PX` (QC configuration table); read it from
+  the Pass 2 extraction at that width.
 - **Text truncation and wrapping**, especially in RTL, where strings differ in
   length from their LTR equivalents.
 - **Reflow and stacking** — nav, tables, and filters switching to their
@@ -489,5 +503,5 @@ Only visible once the page moves:
 List in the report's Coverage Checklist which states were actually exercised
 per language. A state that could not be reached (no way to trigger an error,
 no permission to empty the list) is stated as **not covered**, with the reason
-— never silently skipped and never implied as passing.
+— never silently skipped and never implied as passing (QC-10).
 

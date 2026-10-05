@@ -11,18 +11,18 @@ document as the recommendation):
    (manifest path first, `Testing/Manual_Test/TestCases` as the fallback).
 3. **A `SPEC-{spec-name}/` folder** → every `US-*/TEST-CASES-*.md` under it: a multi-story run (§4).
 
-No document → BLOCKED: "run `link-qc-3-generate-manual-test-cases` first — this skill validates an
-existing document and designs nothing". The resolved `{tc_output_folder}` is stated in the chat
+No document → BLOCKED: "expand the approved test plan first (`/speckit.tasks`, QC-18) — this skill
+validates an existing document and designs nothing". The resolved `{tc_output_folder}` is stated in the chat
 and is immutable for the run (SKILL.md 9b). A same-story folder at another level (flat `US-*`
 while a `SPEC-*/US-*` twin exists) is reported and never written to.
 
 Companion files in the same folder, read when present: `TEST-DATA-{feature}.md` (the test-data
 inventory you patch — missing → validate the TCs, put data findings under Open Findings, tell the
-user to re-run skill 3; never author the file — its `## 0. Environment` / `## 1. Accounts` /
+user to re-run `/speckit.tasks`; never author the file — its `## 0. Environment` / `## 1. Accounts` /
 `## 2.` rows are what every `[E{n}]` / `[A{n}]` / `[D{n}]` token in the TCs resolves to),
 `TC-REVIEW-STRINGS-{feature}.ar.json` (Arabic sidecar — used by the renderer only under
 `--lang ar`; its presence decides nothing), `evidence/` (earlier PB screenshots — never
-deleted), `ADO-MAP.md` (only to know whether a publication exists).
+deleted).
 
 ## 2. Document state — decides the run mode before anything else
 
@@ -31,7 +31,7 @@ Read the header block (`html-page.md` §3) and the frozen anchors, then classify
 | Header / shape | State | What you do |
 |---|---|---|
 | `Status: PENDING HUMAN REVIEW` | pending | proceed; patch in place |
-| `Status: APPROVED` | approved | **READ-ONLY by default** (SKILL.md invariant 5): validate and report what would change. Patching needs the revision authorization — `--authorize-revision`, or a "yes" to the single ask in §3 (which lists the concrete changes you expect: states, wording, PB entries, data statuses). After an authorized patch that changed something → `Status: PENDING HUMAN REVIEW`; nothing changed → untouched. `ADO-MAP.md` present → the final message says skill 4 `--republish`; absent → no republish talk |
+| `Status: APPROVED` | approved | **READ-ONLY by default** (SKILL.md invariant 5; policy QC-8 — the invoking command passes `--authorize-revision` and restores `APPROVED` after its design-field diff): validate and report what would change. Patching needs the revision authorization — `--authorize-revision`, or a "yes" to the single ask in §3 (which lists the concrete changes you expect: states, wording, PB entries, data statuses). After an authorized patch that changed something → `Status: PENDING HUMAN REVIEW`; nothing changed → untouched |
 | any TC stamp carries `tool: mcp` or no `tool` key (written by skill 3b) | validated by the other validator | no question: after the freshness pass, note current vs stale (`patch-rules.md` §1b), re-validate every such TC this run and replace its stamp on observation; the header line (`by 3b on …`) is corroboration only |
 | `MCP validation:` line carries `by 3c on {date}` | already validated by this skill | **RE-VALIDATE** mode: freshness pass first (`patch-rules.md` §1) for the report; the walk set is still every TC (no re-run skip set — `discovery-plan.md` §5); stamp gets `re-run {n}` |
 | No `Scope` / `Generated` / `Stage` / frozen anchors (renderer `compatibility[]` lists them) | legacy shape | proceed — it renders and it is patchable. Do NOT rewrite it into the new shape on your own; when you patch it anyway (authorized, or pending) add only the lines and sections your patch needs (`App validation progress`, `## Enhancement Log`, `## Potential Bugs`, `## Open Questions`, evidence stamps) and say so |
@@ -48,9 +48,9 @@ per-TC `Validation` values with their evidence stamps.
 
 **Probe first** (`browser-cli.md` §1): `playwright-cli --version`, else
 `npx --no-install playwright-cli --version`. Neither → BLOCKED immediately: "playwright-cli is
-not installed — run `/sync-skills --tools` (installs playwright-cli and its browser) or
-`/link-qc-1-generate-update-testing-structure repair`, then re-run this skill". Never ask for anything
-that cannot be used; never install; never fall back to the Playwright MCP server. (`--audit`
+not installed — run `/sync-skills --tools` (installs playwright-cli and its browser), then re-run
+this skill" (QC-17). Never ask for anything that cannot be used; never install; never fall back to
+the Playwright MCP server. (`--audit`
 stops here with its report.)
 
 Then ONE message — never a second one for any of these — after searching the learning file and
@@ -60,8 +60,8 @@ the three model sections' Q&A (`open-questions.md` §1) and stating what you reu
 |---|---|---|
 | Application base URL — the `[E1]` row of `TEST-DATA` §0 | not recorded as `[type: env]` for the target environment (the row says `unknown — asked by 3b/3c`), or the user names another environment; the answer fills that row's `Value` / `Status`. Any other `[E{n}]` row still `unknown` (mail sandbox, SMS test provider…) is asked in the same message — each is its own service, never "the URL" | auto-detected; written into a TC as a literal |
 | Username per account the TCs reference (`[A{n}]` — role and username from `TEST-DATA` §1) | only for a row whose username is `unknown`; the answer fills that row | written into a step — the TC keeps `Login as {role} [A{n}]` |
-| **Login method per account** — A) attended: you open a visible browser for that account and the user logs in themselves; B) secrets file: skill 1's `set-playwright-secrets` script was run with names that follow the account ID (`A1_USER` / `A1_PASSWORD` for `[A1]`) and you type only those NAMES (`browser-cli.md` §3) | always, per referenced account; state the recorded method for this environment as the recommendation when the learning file has one | a password — not in chat, not on a command line, not in a file; the run never receives one |
-| Implementation status (implemented / partially / not implemented / not sure) | the header says `not yet checked live` and no skill-4 report answers it | trusted over the live look — both are recorded |
+| **Login method per account** — A) attended: you open a visible browser for that account and the user logs in themselves; B) secrets file: the project's secrets file holds names that follow the account ID (`A1_USER` / `A1_PASSWORD` for `[A1]`) and you type only those NAMES (`browser-cli.md` §3) | always, per referenced account; state the recorded method for this environment as the recommendation when the learning file has one | a password (QC-7); the run never receives one |
+| Implementation status (implemented / partially / not implemented / not sure) | the header says `not yet checked live` and the invoking command did not pass it | trusted over the live look (QC-8: both are recorded, neither overrides the other) |
 | Environment notes | always, one line: VPN / tenant / where the build number shows / anything that blocks screens / whether this is production | — |
 | **Data changes on {env}** — may this run create / modify / delete data (`walk-rules.md` §3a)? | always; name the TCs it concerns (`Data effect` ≠ read-only) and what would be cleaned up; production named in the notes → "no" is stated, not asked | a mutation on "no"; a mutation on production |
 | Revision authorization (approved document, changes expected) | `Status: APPROVED` and no `--authorize-revision`; list the concrete changes you expect | re-asked in the same run |

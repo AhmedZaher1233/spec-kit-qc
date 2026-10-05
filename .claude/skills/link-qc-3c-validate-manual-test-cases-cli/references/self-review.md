@@ -13,7 +13,7 @@ then patch the files. There is no separate reviewer agent — the next gate is t
    what was looked at and what it showed; a command that merely succeeded is not an observation.
 2. **Separation** — requirement / coverage gaps, application defects (one line per PB), pending
    implementation, environment blockers and unclear requirements appear in five distinct
-   buckets — never mixed; a coverage gap is recorded for skill 3, never closed by adding a TC.
+   buckets — never mixed; a coverage gap is recorded for the test plan (QC-8), never closed by adding a TC.
 3. **No design field changed** — diff `ID`, `Type`, `Locale`, `Requirement`, `Stage`,
    `Description`, `Smoke`, `Automation Candidate`, `Data effect`, `Shared data`, `Tags`,
    `Data Oracle`, every `[HUMAN]` marker, every `[E{n}]` / `[A{n}]` / `[D{n}]` token and the TC
@@ -27,9 +27,8 @@ then patch the files. There is no separate reviewer agent — the next gate is t
 6. **History kept** — enhancement-log rows appended, none edited or deleted; PB entries updated
    in place with stable ids, `resolved` only where a retest succeeded this run, `not-checked-
    this-run` where it did not; evidence stamps replaced only for TCs observed this run.
-7. **Potential bugs are concise** — five visible lines each (title, TC, numbered reproduction
-   steps, requirement-based expected result copied from the TC, actual result); no analysis, no
-   suspected cause; no PB for a gap, a blocker or an unclear requirement.
+7. **Potential bugs follow QC-14** — the five-line shape, no analysis, no suspected cause, one
+   per TC-ID + contradiction; no PB for a gap, a blocker or an unclear requirement.
 8. **Secrets, code and references** — no password, token, selector, locator, element ref,
    attribute name, code snippet or file identifier in the TC document, the test-data file, the
    page, the sidecar or the learning file; roles and `[A{n}]` references in the TCs, the username

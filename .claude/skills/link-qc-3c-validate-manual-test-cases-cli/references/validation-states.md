@@ -1,6 +1,3 @@
-<!-- MIRROR — byte-identical copies live in the sibling skill folders
-     (link-qc-3-generate-manual-test-cases ↔ link-qc-3b-validate-manual-test-cases ↔ link-qc-3c-validate-manual-test-cases-cli, each under references/). Edit all three;
-     scripts/selftest.mjs case 0 sha256-compares every mirrored file. -->
 # Validation states — one per TC, a cross-skill contract
 
 The `Validation` field of every TC carries exactly one of these values. Skill 3 writes only the
@@ -18,10 +15,13 @@ carries them forward as "possibly stale"). The words are frozen — never rename
 
 Rules that hold in every skill that writes a state:
 
-- **Never claim what you did not observe.** A TC is `validated` only when its own unique tail was
-  seen live; prefix-only knowledge is `inferred`; unobservable is `draft`. A `[HUMAN]` step is by
-  definition not observed by the tool: the validator walks up to it, stops, and writes
-  `draft — not app-validated (human step pending)` — never `validated`, never `enhanced` away.
+- Policy: constitution "Quality Control" article QC-8 — the frozen states and their meaning,
+  `validated` only on an observed outcome, gaps / defects / pending implementation kept separate,
+  App validation progress = `validated` + `enhanced` + `discrepancy` (non-stale) over all TCs, an
+  observation measure that never changes design coverage. This file applies it and does not
+  restate it. Mechanics: prefix-only knowledge is `inferred`; unobservable is `draft`; a
+  `[HUMAN]` step is by definition not observed by the tool — the validator walks up to it, stops,
+  and writes `draft — not app-validated (human step pending)`, never `enhanced` away.
 - **A state survives only while its evidence applies.** Each observed TC carries a
   `<!-- tc-evidence -->` stamp (date, environment, build, scope, content hash, requirement-text
   hash, open questions at observation time; 3b writes `tool: mcp`, 3c writes `tool: cli` plus an
@@ -30,11 +30,6 @@ Rules that hold in every skill that writes a state:
   environment, the build (where known) or an undermining open question changes, the state drops to
   `draft — not app-validated (stale — {reason})` and the TC is re-queued. A stale TC is counted as
   draft and badged `stale` on the page.
-- **Gaps, defects and pending implementation stay separate.** A missing screen on a story that is
-  not implemented is `not-implemented`, never `discrepancy`; a spec-vs-app contradiction is
-  `discrepancy` + a `PB-{n}` entry, never a rewrite of the requirement.
-- **App validation progress** counts `validated` + `enhanced` + `discrepancy` (non-stale) over all
-  TCs — it is an observation measure, not a pass rate, and it never changes the requirement
-  coverage score.
-- On skill 3 `--revision`, a TC whose steps change is reset to `draft — not app-validated (stale —
-  revised)`; TCs the revision did not touch keep their state.
+- On a design revision (the test cases are re-expanded from the test plan at `/speckit.tasks`), a
+  TC whose steps change is reset to `draft — not app-validated (stale — revised)`; TCs the
+  revision did not touch keep their state.

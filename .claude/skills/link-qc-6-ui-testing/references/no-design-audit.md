@@ -132,8 +132,11 @@ a handful of colours, 4–6 font sizes, one or two radii, spacing on a consisten
 This converts "it feels inconsistent" into a counted, citable finding.
 
 **Rung 5 — Universal standards** — WCAG contrast (computed numerically from the
-Pass 2 colours, not eyeballed), touch-target size, visible focus, and RTL
-convention. These apply regardless of what any design says.
+Pass 2 colours, not eyeballed), touch-target size, body font size, visible
+focus, and RTL convention. These apply regardless of what any design says. The
+thresholds come from the constitution's QC configuration table (`WCAG_TARGET`,
+`CONTRAST_TEXT` / `CONTRAST_LARGE_TEXT` / `CONTRAST_UI`, `TOUCH_TARGET_MIN_PX`,
+`BODY_FONT_MIN_PX`), never from this file.
 
 **Rung 6 — Task-flow walkthrough (test like a human, not a scanner)**
 
@@ -160,16 +163,18 @@ Alongside the ladder, keep judging every element against:
   look identical everywhere on this screen (and, if visible, other screens of
   the same portal)? Inconsistency between two instances of "the same thing" is
   itself a bug even with no design to compare to.
-- **Established UI/UX heuristics** — sufficient color contrast (WCAG AA:
-  4.5:1 body text, 3:1 large text/UI components), touch target sizing (≥44px),
-  visible focus states, consistent spacing scale, predictable interactive
+- **Established UI/UX heuristics** — sufficient colour contrast and touch-target
+  size (the `CONTRAST_*` and `TOUCH_TARGET_MIN_PX` values of the QC
+  configuration table), visible focus states, consistent spacing scale, predictable interactive
   affordances (links look clickable, disabled states look disabled), sensible
   visual hierarchy (primary action visually dominant over secondary/tertiary).
-- **RTL correctness for AR** — this is the single most commonly-missed
-  category when no AR design exists, so treat it as mandatory, not optional:
+- **RTL correctness for AR** — constitution QC-10 / QC-12 make the RTL audit a
+  pass of its own; it is also the single most commonly-missed category when no
+  AR design exists:
   - Full layout mirroring: nav order, icon direction (back/forward arrows,
     chevrons, breadcrumbs), text alignment, form field/label alignment
-  - Numerals, dates, and currency formatting appropriate for AR locale
+  - Numerals, dates, and currency formatting appropriate for the AR locale (the
+    `DATE_FORMAT` / `NUMBER_FORMAT` / `CURRENCY` rows of the configuration table)
   - No leftover LTR artifacts: icons that should flip but don't (arrows,
     "next/previous" carets), padding/margin that was mirrored incorrectly
     (asymmetric spacing that reveals a hardcoded left/right value instead of
@@ -189,8 +194,9 @@ Alongside the ladder, keep judging every element against:
 
 ### 3. Bug, or question? (the false-positive filter)
 
-A single value is never a bug on its own — a **contradiction** is. Before
-writing anything up, run each observation through this test, and route it
+> Policy: constitution "Quality Control" article QC-10 (a contradiction is a bug, a single value is not; unclear intent becomes a question with measured values; taste is not a finding). This skill applies it and does not restate it.
+
+Before writing anything up, run each observation through this test, and route it
 accordingly.
 
 **File it as a bug** when it is:
@@ -213,9 +219,9 @@ than slipped:
   typo.
 - Anything where you'd be guessing at intent.
 
-**Report nothing at all** for taste or preference — "this blue is unattractive",
-"I'd move the button right". If you cannot express it as a contradiction, a
-standard, or a breakage, it isn't a finding.
+**Report nothing at all** when it is only taste or preference (QC-10) — "this
+blue is unattractive", "I'd move the button right". The test: if you cannot
+express it as a contradiction, a standard, or a breakage, it isn't a finding.
 
 **Honest limit — state it in the report.** This method finds *inconsistency*,
 so a page that is uniformly wrong has no internal contradiction to expose and
@@ -234,8 +240,8 @@ is no design). Valid phrasings, by rung:
 - **Self-consistency (counted):** "Button padding is 8px on this card and 16px
   on the card above — inconsistent within the same screen"; or "`font-size`
   values in use: 14px (×63), 13px (×2) — the two 13px labels are outliers."
-- **Standard:** "Contrast ratio 2.8:1 on grey-on-white body text — below WCAG
-  AA 4.5:1."
+- **Standard:** "Contrast ratio 2.8:1 on grey-on-white body text — below the
+  `CONTRAST_TEXT` threshold of the QC configuration table."
 - **Task flow:** "Saving the record shows no confirmation and leaves the user
   on the same form, with no way to tell whether it succeeded."
 
