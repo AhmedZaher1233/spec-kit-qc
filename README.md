@@ -48,6 +48,7 @@ the test plan.
 | `.claude/skills/link-qc-6-ui-testing` | retained, optional, trimmed | visual audit through the Playwright MCP; thresholds read from the configuration table (`BREAKPOINTS_PX`, `WCAG_TARGET`, `CONTRAST_*` …); severity/priority rules point to QC-10 / QC-14 |
 | `.claude/skills/link-qc-md-to-html` | new | one converter for every QC Markdown file, built from the existing renderers |
 | `snippets/CLAUDE-md-qc-section.md` | optional | short agent orientation for work outside the commands |
+| `.claude/commands/sync-skills.md`, `.claude/scripts/sync-qc-skills.mjs` | tooling | `/sync-skills`: pulls the four skills (and itself) from this repo into any project; `--check` / `--apply` / `--replace --yes` / `--tools` |
 
 ## Where the former skills went
 
@@ -78,10 +79,11 @@ specify preset resolve test-plan-template      # check composition
 
 Then:
 
-1. Copy the four retained skills from this preset's `.claude/skills/` into the project's
-   `.claude/skills/`. The copies here are the **trimmed** versions (policy removed, pointers to the
-   constitution); `/sync-skills` would re-download the untrimmed canonical versions, so use it only
-   for `--tools` (playwright-cli) until the canonical repo carries the trimmed skills.
+1. Install the four retained skills with `/sync-skills` (command and script in `.claude/commands/`
+   and `.claude/scripts/`; the "Installing this command" section of the command file shows the
+   one-time bootstrap). It pulls the **trimmed** skills from `https://github.com/AhmedZaher1233/spec-kit-qc`
+   — this repo — never from Link_AI_Pro. Add `--tools` to install playwright-cli when the project
+   has a browser surface. For a private repo set `GITHUB_TOKEN`.
 2. Send `templates/constitution-template.md` to the development team: its `## Development` article
    is a placeholder (DEV-1 … DEV-7) they fill with the developer-owned rules; the Quality Control
    article holds no developer rules. Then run `/speckit.constitution` once: both articles are merged

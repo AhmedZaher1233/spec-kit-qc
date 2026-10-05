@@ -3,10 +3,10 @@ schema_version: "1.0"
 preset:
   id: "qc"
   name: "QC in the Spec Kit lifecycle"
-  version: "3.0.0"
+  version: "3.1.0"
   description: "Testing built into every Spec Kit stage: constitution QC article, test plan beside the development plan, test cases at tasks, validation and automation at implement"
   author: "QC Team"
-  repository: "https://github.com/AhmedZaher1233/Link_AI_Pro"
+  repository: "https://github.com/AhmedZaher1233/spec-kit-qc"
   license: "MIT"
 
 requires:
