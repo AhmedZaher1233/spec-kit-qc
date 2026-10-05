@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- render-run-report v1.1 · report=4a2749e22980dbc936a744126aaa515b3a9267c153e38679e9755cc6139fd20e · bugs=9665ed9d16deaecfd7d333170b8a000f60993b5a8db7a7405e992886c31e995f · runs=b7748010f903a586cb874377bd9230b249f99bb1046bdfa4aa4a7c2fb0a29d7a · comments=none · page=6629a01d9a5653dcee3b265927016671afca3a3af0c5a4cc7127d074996b6c9f -->
+<!-- render-run-report v1.1 · report=ec499e616c6feb0a6c0530e1e042b9e052ed36fb8fa0e0574f7b8176634ad684 · bugs=f7b9b774402e5f0d062408406429e6744ea631d86ff231fc8e8b60e24e7a01b9 · runs=b7748010f903a586cb874377bd9230b249f99bb1046bdfa4aa4a7c2fb0a29d7a · comments=none · page=b471f904aa8f82082c4faedcd8851d7354d5e4092dab993f49e128951467ea75 -->
 <!-- MIRROR — byte-identical copies live in four skill folders, each under assets/:
      link-qc-3-generate-manual-test-cases ↔ link-qc-3b-validate-manual-test-cases ↔
      link-qc-3c-validate-manual-test-cases-cli ↔ link-qc-5-test-run-automation. Edit all four;
@@ -516,9 +516,9 @@ footer code { font-family: var(--mono); color: var(--text); }
 
         <h3 class="sub-head">Bugs found or retested in this phase</h3>
         <div class="tablewrap"><table>
-          <thead><tr><th>Bug</th><th>TC-ID</th><th>Severity</th><th>Status</th></tr></thead>
+          <thead><tr><th>Bug</th><th>TC-ID</th><th>Severity</th><th>Priority</th><th>Status</th></tr></thead>
           <tbody>
-            <tr><td><a href="#BUG-1">BUG-1</a></td><td>TC-010</td><td>High</td><td><span class="badge b-open">open</span></td></tr>
+            <tr><td><a href="#BUG-1">BUG-1</a></td><td>TC-010</td><td>High</td><td>P2</td><td><span class="badge b-open">open</span></td></tr>
           </tbody>
         </table></div>
 
@@ -759,10 +759,10 @@ footer code { font-family: var(--mono); color: var(--text); }
 
         <h3 class="sub-head">Bugs found or retested in this phase</h3>
         <div class="tablewrap"><table>
-          <thead><tr><th>Bug</th><th>TC-ID</th><th>Severity</th><th>Status</th></tr></thead>
+          <thead><tr><th>Bug</th><th>TC-ID</th><th>Severity</th><th>Priority</th><th>Status</th></tr></thead>
           <tbody>
-            <tr><td><a href="#BUG-1">BUG-1</a></td><td>TC-010</td><td>High</td><td><span class="badge b-resolved">resolved (phase 2)</span></td></tr>
-            <tr><td><a href="#BUG-2">BUG-2</a></td><td>TC-007</td><td>Medium</td><td><span class="badge b-open">open</span></td></tr>
+            <tr><td><a href="#BUG-1">BUG-1</a></td><td>TC-010</td><td>High</td><td>P2</td><td><span class="badge b-resolved">resolved (phase 2)</span></td></tr>
+            <tr><td><a href="#BUG-2">BUG-2</a></td><td>TC-007</td><td>Medium</td><td>P3</td><td><span class="badge b-open">open</span></td></tr>
           </tbody>
         </table></div>
 
@@ -838,7 +838,7 @@ footer code { font-family: var(--mono); color: var(--text); }
       <button type="button" data-filter="not-checked" aria-pressed="false">Not checked</button>
     </div>
     <article class="item-card bug resolved" id="BUG-1" data-status="resolved" data-filter-item>
-      <div class="item-head"><span class="card-id">BUG-1</span><h3>The system doesn&#39;t remove a draft order when the user confirms Delete</h3><span class="badge b-resolved">resolved · phase 2</span><span class="badge sev-high">High</span></div>
+      <div class="item-head"><span class="card-id">BUG-1</span><h3>The system doesn&#39;t remove a draft order when the user confirms Delete</h3><span class="badge b-resolved">resolved · phase 2</span><span class="badge sev-high">High</span><span class="badge sev-high">P2</span></div>
       <dl>
         <dt>Test case</dt><dd>
           <a href="#tc-1-TC-010">TC-010</a> · found in phase 1
@@ -868,7 +868,7 @@ footer code { font-family: var(--mono); color: var(--text); }
 </div>
     </article>
     <article class="item-card bug open" id="BUG-2" data-status="open" data-filter-item>
-      <div class="item-head"><span class="card-id">BUG-2</span><h3>The system doesn&#39;t recalculate the order total when the user edits the quantity of variation B</h3><span class="badge b-open">open</span><span class="badge sev-medium">Medium</span></div>
+      <div class="item-head"><span class="card-id">BUG-2</span><h3>The system doesn&#39;t recalculate the order total when the user edits the quantity of variation B</h3><span class="badge b-open">open</span><span class="badge sev-medium">Medium</span><span class="badge sev-medium">P3</span></div>
       <dl>
         <dt>Test case</dt><dd>
           <a href="#tc-2-TC-007">TC-007</a> · found in phase 2
@@ -925,7 +925,7 @@ footer code { font-family: var(--mono); color: var(--text); }
   </div>
   <div class="viewer-pane" id="viewer-pane"><img id="viewer-img" alt=""></div>
 </dialog>
-<script type="application/json" id="report-data">{"pageKind":"run-report","feature":"create-order","page":"TEST-RUN-REPORT-create-order.html","source":"TEST-RUN-REPORT-create-order.md","sourceRev":"4a2749e22980","commentsFile":"REVIEW-COMMENTS-create-order.md","strings":{"theme":"Theme","theme_auto":"auto","theme_light":"light","theme_dark":"dark","viewer":"Screenshot","drafts":"{n} unsaved comment(s)","saved":"Saved — {n} open comment(s). Tell the chat: \"read my comments\".","downloaded":"Downloaded — {n} open comment(s). Move the file from Downloads beside this page, then tell the chat: \"read my comments\".","copied":"Copied — paste it into the chat.","copy_failed":"Copy failed — use Save comments instead.","no_storage":"This browser does not keep drafts for local files — save before closing the page.","file_title":"Review comments"},"comments":{"fileRev":"none","reviewer":"","entries":[]}}</script>
+<script type="application/json" id="report-data">{"pageKind":"run-report","feature":"create-order","page":"TEST-RUN-REPORT-create-order.html","source":"TEST-RUN-REPORT-create-order.md","sourceRev":"ec499e616c6f","commentsFile":"REVIEW-COMMENTS-create-order.md","strings":{"theme":"Theme","theme_auto":"auto","theme_light":"light","theme_dark":"dark","viewer":"Screenshot","drafts":"{n} unsaved comment(s)","saved":"Saved — {n} open comment(s). Tell the chat: \"read my comments\".","downloaded":"Downloaded — {n} open comment(s). Move the file from Downloads beside this page, then tell the chat: \"read my comments\".","copied":"Copied — paste it into the chat.","copy_failed":"Copy failed — use Save comments instead.","no_storage":"This browser does not keep drafts for local files — save before closing the page.","file_title":"Review comments"},"comments":{"fileRev":"none","reviewer":"","entries":[]}}</script>
 <script>
 (function () {
   'use strict';

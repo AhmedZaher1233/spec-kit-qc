@@ -46,6 +46,25 @@ export const RESULT_STATES = ['PASS', 'FAIL', 'INCOMPLETE', 'SKIP', 'NOT_RUN', '
 export const PARTIAL_REASON = 'human step pending';
 export const CLASSIFICATIONS = ['app_bug', 'selector_failure', 'assertion_failure', 'environment_failure', 'data_missing', 'timeout_failure', 'evidence_failure', 'unverified_assumption'];
 export const SEVERITIES = ['Critical', 'High', 'Medium', 'Low'];
+/** Constitution QC-14: Severity 1 Critical · 2 High · 3 Medium · 4 Low; Priority P1 … P4. Both are earned, never defaulted. */
+export const PRIORITIES = ['P1', 'P2', 'P3', 'P4'];
+const SEV_BY_NUMBER = { 1: 'Critical', 2: 'High', 3: 'Medium', 4: 'Low' };
+/** `High`, `2 — High`, `Severity 2`, `2` → `High`; anything else → null. */
+export function normalizeSeverity(raw) {
+  const s = String(raw || '').trim();
+  if (!s) return null;
+  const word = SEVERITIES.find((x) => new RegExp('(^|[^a-z])' + x + '($|[^a-z])', 'i').test(s));
+  if (word) return word;
+  const n = s.match(/^(?:severity\s*)?([1-4])\b/i);
+  return n ? SEV_BY_NUMBER[n[1]] : null;
+}
+/** `P2`, `P2 — before release`, `Priority 2`, `2` → `P2`; anything else → null. */
+export function normalizePriority(raw) {
+  const s = String(raw || '').trim();
+  if (!s) return null;
+  const m = s.match(/^(?:priority\s*)?P?\s*([1-4])\b/i);
+  return m ? 'P' + m[1] : null;
+}
 export const BUG_STATUSES = ['open', 'resolved', 'not-checked'];
 // `partial` is an OPTIONAL column of the Stages / Run history tables and an optional ` · {n} partial`
 // of the Latest results line — required only when a phase holds a PARTIAL row.
@@ -236,7 +255,7 @@ export function parseReport(text) {
     const planSec = sub(/^run plan$/i);
     const bugsSec = sub(/^bugs$/i); const bugsT = tablesOf(bugsSec)[0];
     const bugRefs = [];
-    if (bugsT) { const ci = { id: col(bugsT, /^bug$/i), tc: col(bugsT, /^tc-?id$/i), sev: col(bugsT, /^severity$/i), st: col(bugsT, /^status$/i) }; for (const r of bugsT.rows) { const id = stripMd(cell(r, ci.id)); if (id) bugRefs.push({ id, tc: stripMd(cell(r, ci.tc)) || DASH, severity: stripMd(cell(r, ci.sev)) || DASH, status: stripMd(cell(r, ci.st)) || DASH }); } }
+    if (bugsT) { const ci = { id: col(bugsT, /^bug$/i), tc: col(bugsT, /^tc-?id$/i), sev: col(bugsT, /^severity$/i), pri: col(bugsT, /^priority$/i), st: col(bugsT, /^status$/i) }; for (const r of bugsT.rows) { const id = stripMd(cell(r, ci.id)); if (id) bugRefs.push({ id, tc: stripMd(cell(r, ci.tc)) || DASH, severity: normalizeSeverity(stripMd(cell(r, ci.sev))) || stripMd(cell(r, ci.sev)) || DASH, priority: ci.pri >= 0 ? (normalizePriority(stripMd(cell(r, ci.pri))) || stripMd(cell(r, ci.pri)) || DASH) : DASH, status: stripMd(cell(r, ci.st)) || DASH }); } }
     const healSec = sub(/^heal log$/i); const healT = tablesOf(healSec)[0];
     const readySec = sub(/^test-data readiness$/i);
     const devSec = sub(/^deviations$/i);
@@ -279,19 +298,21 @@ export function parseBugReport(text) {
     for (const b of parseIdBlocks(sec.lines, base, (id) => /^BUG-\d+$/.test(id))) {
       const { fields } = parseFieldBullets(b.lines, b.line);
       const v = (n) => fieldValue(fields, n);
-      for (const req of ['TC-ID', 'Status', 'Steps to reproduce', 'Expected', 'Actual']) if (!fieldOf(fields, req)) errors.push({ kind: 'bug-field-missing', line: b.line, detail: b.id + ' has no `' + req + '` field' });
+      for (const req of ['TC-ID', 'Severity', 'Priority', 'Status', 'Steps to reproduce', 'Expected', 'Actual']) if (!fieldOf(fields, req)) errors.push({ kind: 'bug-field-missing', line: b.line, detail: b.id + ' has no `' + req + '` field' + (req === 'Severity' || req === 'Priority' ? ' (constitution QC-14: earned, never defaulted)' : '') });
       const st = v('Status'); let status = null; let resolvedPhase = null;
       if (/^open$/i.test(st)) status = 'open';
       else if (/^resolved(\s*\(phase\s*(\d+)\))?$/i.test(st)) { status = 'resolved'; const mm = st.match(/phase\s*(\d+)/i); resolvedPhase = mm ? Number(mm[1]) : null; }
       else if (/^not[- ]checked([- ]this[- ]run)?$/i.test(st)) status = 'not-checked';
       else if (st) errors.push({ kind: 'bug-unknown-enum', line: b.line, detail: b.id + ' Status "' + st + '" is not open / resolved (phase N) / not-checked-this-run' });
-      const sev = v('Severity');
-      if (sev && !SEVERITIES.some((s) => s.toLowerCase() === sev.toLowerCase())) errors.push({ kind: 'bug-unknown-enum', line: b.line, detail: b.id + ' Severity "' + sev + '" is not Critical / High / Medium / Low' });
+      const sevRaw = v('Severity'); const sev = normalizeSeverity(sevRaw);
+      if (sevRaw && !sev) errors.push({ kind: 'bug-unknown-enum', line: b.line, detail: b.id + ' Severity "' + sevRaw + '" is not Critical / High / Medium / Low (QC-14: 1 Critical · 2 High · 3 Medium · 4 Low)' });
+      const priRaw = v('Priority'); const pri = normalizePriority(priRaw);
+      if (priRaw && !pri) errors.push({ kind: 'bug-unknown-enum', line: b.line, detail: b.id + ' Priority "' + priRaw + '" is not P1 / P2 / P3 / P4 (QC-14)' });
       const stepsF = fieldOf(fields, 'Steps to reproduce');
       const steps = stepsF ? (stepsF.items.length ? stepsF.items : stepsF.value.split(/\s(?=\d+[.)]\s)/).map((s) => s.replace(/^\d+[.)]\s*/, '').trim()).filter(Boolean)) : [];
       const histF = fieldOf(fields, 'History');
       const found = toNum(v('Found in phase'));
-      entries.push({ id: b.id, title: b.title, line: b.line, tc: v('TC-ID') || DASH, req: v('Requirement') || DASH, severity: sev || DASH, environment: v('Environment') || DASH, browser: v('Browser') || DASH, language: v('Language') || DASH, build: v('Build') || DASH, foundIn: found, foundInRaw: v('Found in phase') || DASH, status, statusRaw: st, resolvedPhase, rootCause: v('Root cause') || DASH, steps, expected: v('Expected') || DASH, actual: v('Actual') || DASH, screenshotRaw: fieldOf(fields, 'Screenshot') ? fieldOf(fields, 'Screenshot').value : '', evidence: v('Evidence') || DASH, history: histF ? histF.items.map(stripMd) : [], note: bare(v('Reviewer comment')) });
+      entries.push({ id: b.id, title: b.title, line: b.line, tc: v('TC-ID') || DASH, req: v('Requirement') || DASH, severity: sev || DASH, priority: pri || DASH, environment: v('Environment') || DASH, browser: v('Browser') || DASH, language: v('Language') || DASH, build: v('Build') || DASH, foundIn: found, foundInRaw: v('Found in phase') || DASH, status, statusRaw: st, resolvedPhase, rootCause: v('Root cause') || DASH, steps, expected: v('Expected') || DASH, actual: v('Actual') || DASH, screenshotRaw: fieldOf(fields, 'Screenshot') ? fieldOf(fields, 'Screenshot').value : '', evidence: v('Evidence') || DASH, history: histF ? histF.items.map(stripMd) : [], note: bare(v('Reviewer comment')) });
     }
     if (!entries.length && !isNone(sec.lines.filter((l) => !/^###/.test(l)))) warnings.push({ kind: 'bug-section-unparsed', detail: '`## Bugs` has content but no `### BUG-n — title` entry was recognised' });
   }
@@ -734,7 +755,7 @@ function viewModel(model, files, cm) {
       ...cv,
       has_results: p.hasResultsTable, results,
       has_assumptions: !!(p.assumptions && p.assumptions.rows.length), assumptions: table(p.assumptions),
-      has_bugrefs: p.bugRefs.length > 0, bugrefs: p.bugRefs.map((b) => { const st = b.status.toLowerCase(); return { ...b, anchor: b.id, status_class: /^resolved/.test(st) ? 'b-resolved' : /not/.test(st) ? 'b-not-checked' : 'b-open' }; }),
+      has_bugrefs: p.bugRefs.length > 0, bugrefs: p.bugRefs.map((b) => { const st = b.status.toLowerCase(); const entry = bugs ? bugs.entries.find((e) => e.id === b.id) : null; return { ...b, severity: b.severity !== DASH ? b.severity : (entry ? entry.severity : DASH), priority: b.priority !== DASH ? b.priority : (entry ? entry.priority : DASH), anchor: b.id, status_class: /^resolved/.test(st) ? 'b-resolved' : /not/.test(st) ? 'b-not-checked' : 'b-open' }; }),
       has_heals: !!(p.heals && p.heals.rows.length), heals: table(p.heals), has_heal_text: !p.heals && !!p.healText, heal_text: p.healText,
       has_skips: !!(p.skips && p.skips.rows.length), skips: table(p.skips),
       has_questions: !!(p.questions && p.questions.rows.length), questions: table(p.questions),
@@ -748,7 +769,7 @@ function viewModel(model, files, cm) {
     const hasAnchor = !!(foundPhase && foundPhase.results.some((r) => r.tc === b.tc));
     return {
       id: b.id, anchor: b.id, title: b.title || DASH, tc: b.tc, tc_anchor: hasAnchor ? 'tc-' + b.foundIn + '-' + b.tc : '', has_tc_anchor: hasAnchor, req: b.req,
-      severity: b.severity, sev_class: 'sev-' + b.severity.toLowerCase(), status: b.status || 'open', status_class: 'b-' + (b.status || 'open'), status_word: b.status === 'resolved' ? 'resolved' + (b.resolvedPhase ? ' · phase ' + b.resolvedPhase : '') : b.status === 'not-checked' ? 'not checked this run' : 'open',
+      severity: b.severity, sev_class: 'sev-' + b.severity.toLowerCase(), priority: b.priority, pri_class: 'sev-' + ({ P1: 'critical', P2: 'high', P3: 'medium', P4: 'low' }[b.priority] || 'none'), status: b.status || 'open', status_class: 'b-' + (b.status || 'open'), status_word: b.status === 'resolved' ? 'resolved' + (b.resolvedPhase ? ' · phase ' + b.resolvedPhase : '') : b.status === 'not-checked' ? 'not checked this run' : 'open',
       environment: b.environment, browser: b.browser, language: b.language, build: b.build, found_in: b.foundInRaw, root_cause: b.rootCause,
       steps: b.steps.map((s) => ({ text: s })), expected: b.expected, actual: b.actual,
       screenshot: b.screenshot, has_screenshot: b.screenshot.length > 0, screenshot_text: bare(b.screenshotRaw) || 'none captured',
@@ -889,7 +910,7 @@ export function render({ reportPath, bugsPath = null, runsDir = null, commentsPa
       feature, userStory: bare(model.header['User Story'] || '') || null, spec: bare(model.header['Spec'] || '') || null, latestPhase: latest ? latest.n : null, status: latest ? latest.outcome : null,
       compliance: bare(model.header['Compliance'] || '') || null, adoMode: bare(model.header['Azure DevOps'] || '') || null, earlierPhases: bare(model.header['Earlier phases'] || '') || null, legacyFiles: model.legacyFiles,
       phases: model.phases.map((p) => ({ phase: p.n, date: p.date, outcome: p.outcome, declared: p.declared, counts: p.counts, smokeGate: p.smokeGate ? stripMd(p.smokeGate) : null, coverage: p.covStages ? { target: p.covTarget ? stripMd(p.covTarget) : null, total: (p.covStages.rows.find((r) => /^total$/i.test(stripMd(r[0]))) || []).map(stripMd) } : null, bugRefs: p.bugRefs.map((b) => b.id), assumptions: p.assumptions ? p.assumptions.rows.length : 0, heals: p.heals ? p.heals.rows.length : 0, runFile: p.run ? { present: true, status: p.run.status || null, schema: p.run.schema } : { present: false, status: null, schema: null } })),
-      bugs: model.bugs ? { present: true, ...model.bugs.counts, entries: model.bugs.entries.map((b) => ({ id: b.id, tcId: b.tc, severity: b.severity, status: b.status, foundInPhase: b.foundIn, historyLength: b.history.length, screenshot: b.screenshot.map((s) => s.href) })) } : { present: false, total: null, open: null, resolved: null, notChecked: null, entries: [] },
+      bugs: model.bugs ? { present: true, ...model.bugs.counts, entries: model.bugs.entries.map((b) => ({ id: b.id, tcId: b.tc, severity: b.severity, priority: b.priority, status: b.status, foundInPhase: b.foundIn, historyLength: b.history.length, screenshot: b.screenshot.map((s) => s.href) })) } : { present: false, total: null, open: null, resolved: null, notChecked: null, entries: [] },
     },
     counts: { phases: model.phases.length, latest: latest ? latest.counts : null, evidenceLinks, evidenceMissing: model.warnings.filter((w) => w.kind === 'evidence-file-missing').length, bugs: model.bugs ? model.bugs.counts.total : null, comments: { open: cm.open, handled: cm.handled }, assumptions: latest && latest.assumptions ? latest.assumptions.rows.length : 0 },
     mismatches: model.mismatches, warnings: model.warnings, errors: model.errors,

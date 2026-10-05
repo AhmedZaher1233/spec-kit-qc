@@ -372,7 +372,9 @@ function listFiles(dir) { const out = []; const walk = (d) => { for (const e of 
   const ids = [...html.matchAll(/<article class="item-card bug ([a-z-]+)" id="(BUG-\d+)"/g)].map((m) => m[2] + ':' + m[1]);
   if (ids.join(',') !== 'BUG-1:resolved,BUG-2:open') p.push('bug cards ' + ids.join(','));
   if (!/<a href="#tc-1-TC-010">TC-010<\/a> · found in phase 1/.test(html)) p.push('BUG-1 does not link to TC-010 in phase 1');
-  if (!/<a href="#BUG-1">BUG-1<\/a><\/td><td>TC-010<\/td><td>High<\/td><td><span class="badge b-resolved">resolved \(phase 2\)/.test(html)) p.push('phase-2 bug cross-reference row not linked to the card');
+  if (!/<a href="#BUG-1">BUG-1<\/a><\/td><td>TC-010<\/td><td>High<\/td><td>P2<\/td><td><span class="badge b-resolved">resolved \(phase 2\)/.test(html)) p.push('phase-2 bug cross-reference row not linked to the card');
+  if (!/<span class="badge sev-high">High<\/span><span class="badge sev-high">P2<\/span>/.test(html)) p.push('priority badge missing on the bug card');
+  if (r.payload.document.bugs.entries[0].priority !== 'P2' || r.payload.document.bugs.entries[1].priority !== 'P3') p.push('priority not surfaced in the payload');
   if (!/<b>1 \/ 1 \/ 0<\/b><span>Bugs · open \/ resolved \/ not checked<\/span>/.test(html)) p.push('bugs tile != 1 / 1 / 0');
   const iRes = html.indexOf('<section class="part" id="results">'); const iBugs = html.indexOf('<section class="part" id="bugs">');
   if (iRes < 0 || iBugs < 0 || iBugs < iRes) p.push('results / bugs sections missing or in the wrong order');
@@ -396,9 +398,32 @@ function listFiles(dir) { const out = []; const walk = (d) => { for (const e of 
   } finally { t.cleanup(); }
 }
 
+/* 20b — QC-14 severity / priority: both required, unknown values BLOCK, numbered forms are normalised, a missing Priority column in a phase table falls back to the entry. */
+{
+  const mk = [
+    ['bug-field-missing', (s) => s.replace('- **Priority:** P2\n', '')],
+    ['bug-field-missing', (s) => s.replace('- **Severity:** Medium\n', '')],
+    ['bug-unknown-enum', (s) => s.replace('- **Priority:** P2', '- **Priority:** Urgent')],
+    ['bug-unknown-enum', (s) => s.replace('- **Severity:** High', '- **Severity:** Blocker')],
+  ];
+  const p = [];
+  for (const [kind, mut] of mk) {
+    const t = tmpCopy((s) => s, mut);
+    try { const r = render({ reportPath: t.report, root: t.dir }); if (r.payload.gate !== 'BLOCKED' || !kinds(r).includes(kind)) p.push(kind + ' not BLOCKED: ' + r.payload.gate + ' [' + kinds(r).join(',') + ']'); } finally { t.cleanup(); }
+  }
+  const n = tmpCopy((s) => s.replace('| Bug | TC-ID | Severity | Priority | Status |\n|---|---|---|---|---|\n| BUG-1 | TC-010 | High | P2 | open |', '| Bug | TC-ID | Severity | Status |\n|---|---|---|---|\n| BUG-1 | TC-010 | High | open |'), (s) => s.replace('- **Severity:** High\n- **Priority:** P2', '- **Severity:** 2 — High\n- **Priority:** Priority 2'));
+  try {
+    const r = render({ reportPath: n.report, root: n.dir });
+    if (r.payload.gate !== 'PASS') p.push('normalised forms not accepted: ' + r.payload.gate + ' [' + kinds(r).join(',') + ']');
+    if (r.payload.document.bugs.entries[0].severity !== 'High' || r.payload.document.bugs.entries[0].priority !== 'P2') p.push('normalisation wrong: ' + JSON.stringify(r.payload.document.bugs.entries[0]));
+    if (!/<a href="#BUG-1">BUG-1<\/a><\/td><td>TC-010<\/td><td>High<\/td><td>P2<\/td>/.test(r.html || '')) p.push('phase-1 row without a Priority column did not fall back to the entry');
+  } finally { n.cleanup(); }
+  check('20b severity and priority are required, validated and normalised (QC-14)', p, { cases: mk.length + 1 });
+}
+
 /* 21 — bug cross-checks: header counts, an unknown bug id in a phase table, an unknown phase in an entry → MISMATCH from source bug-report. */
 {
-  const t = tmpCopy((s) => s.replace('| BUG-2 | TC-007 | Medium | open |', '| BUG-2 | TC-007 | Medium | open |\n| BUG-9 | TC-001 | Low | open |'), (s) => s.replace('**Bugs:** 1 open · 1 resolved · 0 not checked this run of 2', '**Bugs:** 2 open · 0 resolved · 0 not checked this run of 2').replace('- **Found in phase:** 2', '- **Found in phase:** 7'));
+  const t = tmpCopy((s) => s.replace('| BUG-2 | TC-007 | Medium | P3 | open |', '| BUG-2 | TC-007 | Medium | P3 | open |\n| BUG-9 | TC-001 | Low | P4 | open |'), (s) => s.replace('**Bugs:** 1 open · 1 resolved · 0 not checked this run of 2', '**Bugs:** 2 open · 0 resolved · 0 not checked this run of 2').replace('- **Found in phase:** 2', '- **Found in phase:** 7'));
   try {
     const r = render({ reportPath: t.report, root: t.dir }); const p = [];
     if (r.payload.gate !== 'MISMATCH') p.push('gate ' + r.payload.gate);

@@ -2004,6 +2004,7 @@ worked in the learning file.
        "evidence_screenshot": "screenshots/[SPEC-{spec-name}/]{user_story_name}/phase-{N}/{TC-ID}/{variant_slug}/attempt-{a}.png of the status-of-record attempt, or null (NOT_RUN/SKIP)",
        "failure_screenshot": "…/attempt-{a}-failed.png or null",
        "severity": "Critical | High | Medium | Low | N/A",
+       "priority": "P1 | P2 | P3 | P4 | N/A",
        "healed_in_first_run": true,
        "attempts": 2,
        "missing_variants": [],
@@ -2175,7 +2176,7 @@ No stack traces, no locators, no framework vocabulary in either line.
 
 ### Supporting fields (keep all of these)
 
-TC-ID · Requirement · Severity · Environment · Browser · Language mode · Build · Root cause ·
+TC-ID · Requirement · **Severity** (Critical / High / Medium / Low) · **Priority** (P1 / P2 / P3 / P4 — set on its own merits per QC-14, never derived from Severity) · Environment · Browser · Language mode · Build · Root cause ·
 embedded failure screenshot · **Evidence** — and Evidence is where the raw assertion text,
 error message and log excerpt belong.
 
@@ -2512,7 +2513,7 @@ Before returning AUTOMATION COMPLETE:
 - [ ] **On a gate stop: run file completed (`stopped-smoke-gate`), phase section appended with Outcome SMOKE GATE FAILED, smoke failures recorded in the bug file, page rendered with the banner and every positive/negative TC as NOT_RUN**
 - [ ] **`@smoke` tags derive only from the TC document's `Smoke:` field (QC-9)**
 - [ ] Second run clean; run file finalized, `## Phase {N}` appended (earlier sections byte-identical), page rendered by the script with RELATIVE screenshot links and the viewer (no base64, every link resolving), renderer gate PASS and `selftest-run-report.mjs` passing before the page is delivered; INCOMPLETE TCs shown with their missing variants, variant/attempt sub-rows for multi-variant or retried TCs
-- [ ] **`BUG-REPORT-{feature}.md` updated: one entry per `app_bug` of this phase, a History line for every retested bug, `resolved (phase N)` only after a passing retest, `not-checked-this-run` when the TC did not run, no entry rewritten or id reused; the phase's `### Bugs` table cites those ids and the renderer reports no `bug-*` mismatch**
+- [ ] **`BUG-REPORT-{feature}.md` updated: one entry per `app_bug` of this phase, a History line for every retested bug, `resolved (phase N)` only after a passing retest, `not-checked-this-run` when the TC did not run, no entry rewritten or id reused, every entry carries an earned **Severity** (Critical / High / Medium / Low) and **Priority** (P1–P4) per QC-14 — never defaulted, never derived from each other; the phase's `### Bugs` table cites those ids and the renderer reports no `bug-*` mismatch**
 - [ ] **Every app_bug titled as a plain sentence (`The system doesn't … when …`) — never an
       assertion string, locator, or TC-ID; raw error text lives under Evidence**
 - [ ] **Every app_bug has numbered reproduce steps starting at login, in the canonical verbs,

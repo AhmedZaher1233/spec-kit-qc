@@ -196,10 +196,10 @@
 <!-- {{#if has_bugrefs}} -->
         <h3 class="sub-head">Bugs found or retested in this phase</h3>
         <div class="tablewrap"><table>
-          <thead><tr><th>Bug</th><th>TC-ID</th><th>Severity</th><th>Status</th></tr></thead>
+          <thead><tr><th>Bug</th><th>TC-ID</th><th>Severity</th><th>Priority</th><th>Status</th></tr></thead>
           <tbody>
 <!-- {{#each bugrefs}} -->
-            <tr><td><a href="#{{anchor}}">{{id}}</a></td><td>{{tc}}</td><td>{{severity}}</td><td><span class="badge {{status_class}}">{{status}}</span></td></tr>
+            <tr><td><a href="#{{anchor}}">{{id}}</a></td><td>{{tc}}</td><td>{{severity}}</td><td>{{priority}}</td><td><span class="badge {{status_class}}">{{status}}</span></td></tr>
 <!-- {{/each}} -->
           </tbody>
         </table></div>
@@ -331,7 +331,7 @@
     </div>
 <!-- {{#each bugs}} -->
     <article class="item-card bug {{status}}" id="{{anchor}}" data-status="{{status}}" data-filter-item>
-      <div class="item-head"><span class="card-id">{{id}}</span><h3>{{title}}</h3><span class="badge {{status_class}}">{{status_word}}</span><span class="badge {{sev_class}}">{{severity}}</span></div>
+      <div class="item-head"><span class="card-id">{{id}}</span><h3>{{title}}</h3><span class="badge {{status_class}}">{{status_word}}</span><span class="badge {{sev_class}}">{{severity}}</span><span class="badge {{pri_class}}">{{priority}}</span></div>
       <dl>
         <dt>Test case</dt><dd>
 <!-- {{#if has_tc_anchor}} -->

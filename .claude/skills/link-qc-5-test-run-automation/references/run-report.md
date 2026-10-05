@@ -112,7 +112,7 @@ then `## Phase N — YYYY-MM-DD` sections, ascending. Sub-sections per phase (`#
 | `Coverage` | table `Stage · Total TCs · Fully · Partially · Not · Weighted %` (+ **Total**) + `**Target:** {t}% ({constitution \| default}, {mechanism}) — **{PASS \| user override \| report-only \| BLOCKED}** · **Δ vs phase {N-1}:** {±d pts — improved … · regressed … \| no prior measurement}` + optional table `Requirement · Outcome · Asserted by` (Full / Partial / Missing / Assumed) | optional |
 | `Results` | table `TC-ID · REQ · Name · Status · Group · Duration · Classification · Evidence`, one row per TC. Status ∈ `PASS \| FAIL \| INCOMPLETE \| SKIP \| NOT_RUN \| PARTIAL — human step pending`. **`PARTIAL — human step pending`** is the one status that carries a reason (the frozen wording; a bare `PARTIAL` or another reason warns, a reason on any other status BLOCKs): the candidate TC has `[HUMAN]` steps, the automation ran and passed up to the first one, and its Classification names the pending step as `human step: {n}`; it counts in its own `partial` bucket — **never as passed** — and a phase holding one is `INCOMPLETE` at best. Classification otherwise from the `<first_run>` catalogue or `—`; an INCOMPLETE row writes `incomplete: {missing slugs}`, or `interrupted: watchdog at step "…" after N s` / `interrupted: collateral (…)` / `cleanup_incomplete` (reason strings on the existing statuses — no new status); a NOT_RUN row may write `not started: watchdog stop`. Evidence = ` · `-separated markdown links **relative to this folder** (`[attempt-2.png](../../screenshots/…/attempt-2.png) · [failed](…/attempt-1-failed.png)`) or `—`; a PARTIAL row links the image of its last automated step | same rule as Stages |
 | `Unverified assumptions` | table `TC-ID · Ambiguity · Interpretation encoded · Evidence · Result`, or `none` | optional |
-| `Bugs` | cross-reference table `Bug · TC-ID · Severity · Status` — one row per bug this phase found or retested, ids from `BUG-REPORT-{feature}.md`; or `none`. **Details never live here** | optional |
+| `Bugs` | cross-reference table `Bug · TC-ID · Severity · Priority · Status` — one row per bug this phase found or retested, ids from `BUG-REPORT-{feature}.md`; or `none`. **Details never live here** | optional |
 | `Heal log` | the nine-column table of `<first_run>` step 5, or `First run fully green` | optional |
 | `Skips and residual failures` | table `TC-ID · Status · Reason`, or `none` | optional |
 | `Open questions` | table `# · Source · Ambiguity · TCs · Decision · By`, or `none` | optional |
@@ -138,7 +138,8 @@ title in the `<bug_report_format>` voice, "The system doesn't … when …"), ea
 |---|---|---|
 | `TC-ID` | the TC that found it | yes |
 | `Requirement` | REQ id | |
-| `Severity` | `Critical \| High \| Medium \| Low` | |
+| `Severity` | `Critical | High | Medium | Low` (constitution QC-14: 1 Critical · 2 High · 3 Medium · 4 Low; `2 — High` is accepted and normalised) | yes |
+| `Priority` | `P1 | P2 | P3 | P4` (QC-14: P1 fix before further testing · P2 before release · P3 this cycle · P4 future; `Priority 2` is accepted and normalised). Earned per defect, never defaulted and never derived from Severity | yes |\| High \| Medium \| Low` | |
 | `Environment`, `Browser`, `Language`, `Build` | where it was seen | |
 | `Found in phase` | the phase number (must be a `## Phase` of the run report) | |
 | `Status` | `open` · `resolved (phase {M})` · `not-checked-this-run` | yes |
@@ -154,8 +155,8 @@ Rules (constitution QC-14 — the same ones live validation applies to Potential
 successful retest** in a later phase (Status names that phase, History gets the line); a bug whose
 TC did not run this phase becomes `not-checked-this-run`; an existing entry is never rewritten —
 only Status and History change; a bug seen again stays one entry. No bugs yet → the file still
-exists with `## Bugs` and `none`. The renderer BLOCKs on a missing required field or an unknown
-Status / Severity, and reports `bug-ref-missing` / `bug-phase-unknown` / `bug-count` mismatches
+exists with `## Bugs` and `none`. The renderer BLOCKs on a missing required field (Severity and Priority included) or an unknown
+Status / Severity / Priority, and reports `bug-ref-missing` / `bug-phase-unknown` / `bug-count` mismatches
 when the two files disagree.
 
 ## 6. Derived numbers — the page shows these, never the written ones
@@ -198,7 +199,7 @@ a `PARTIAL` result exists; a `results[]` row of a PARTIAL TC carries `status: "P
 `merged { stages[], executions[], variants[], tcs[] }` (the `<second_run>` merge, minus its own
 schema / story / phase keys; each `stages[]` entry carries `source: 'json' | 'incremental+watchdog'`
 and, for the latter, `watchdog_path`) · `results[]` (the per-TC rows of `<second_run>` step 3,
-unchanged) · `unverified_assumptions[]` · `bugs[] { id, title, tc_id, req_id, severity, status }` ·
+unchanged) · `unverified_assumptions[]` · `bugs[] { id, title, tc_id, req_id, severity, priority, status }` ·
 `heal_log[]` · `skips[]` · `deviations[]` ·
 `timeouts { playwright_version, feature_gates { tags_object, last_failed, native_step_timeout },
 initial { test_default_ms, test_long_ms, expect_ms, action_ms, navigation_ms, hook_ms,

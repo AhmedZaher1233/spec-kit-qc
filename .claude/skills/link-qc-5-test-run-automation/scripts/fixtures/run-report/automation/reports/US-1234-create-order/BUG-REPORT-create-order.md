@@ -14,6 +14,7 @@
 - **TC-ID:** TC-010
 - **Requirement:** REQ-03
 - **Severity:** High
+- **Priority:** P2
 - **Environment:** UAT
 - **Browser:** chromium
 - **Language:** en
@@ -37,6 +38,7 @@
 - **TC-ID:** TC-007
 - **Requirement:** REQ-02
 - **Severity:** Medium
+- **Priority:** P3
 - **Environment:** UAT
 - **Browser:** chromium
 - **Language:** en

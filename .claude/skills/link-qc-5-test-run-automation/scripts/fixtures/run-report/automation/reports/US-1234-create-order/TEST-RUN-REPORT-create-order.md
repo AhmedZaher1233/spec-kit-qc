@@ -91,9 +91,9 @@
 | TC-007 | "the total updates correctly" | total = sum of line totals after each edit, VAT excluded | OrderTotal.ts line 42 sums lineTotal only | PASS |
 
 ### Bugs
-| Bug | TC-ID | Severity | Status |
-|---|---|---|---|
-| BUG-1 | TC-010 | High | open |
+| Bug | TC-ID | Severity | Priority | Status |
+|---|---|---|---|---|
+| BUG-1 | TC-010 | High | P2 | open |
 
 ### Heal log
 | TC-ID | Affected test / files changed | Defect category | Previous value | Updated value | Reason the new value is correct | Approved-requirement reference | Verification performed | Rerun result |
@@ -188,10 +188,10 @@
 | TC-007 | "the total updates correctly" | total = sum of line totals after each edit, VAT excluded | OrderTotal.ts line 42 sums lineTotal only | INCOMPLETE |
 
 ### Bugs
-| Bug | TC-ID | Severity | Status |
-|---|---|---|---|
-| BUG-1 | TC-010 | High | resolved (phase 2) |
-| BUG-2 | TC-007 | Medium | open |
+| Bug | TC-ID | Severity | Priority | Status |
+|---|---|---|---|---|
+| BUG-1 | TC-010 | High | P2 | resolved (phase 2) |
+| BUG-2 | TC-007 | Medium | P3 | open |
 
 ### Heal log
 First run fully green
