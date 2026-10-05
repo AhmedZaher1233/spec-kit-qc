@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "generatedBy": "speckit.qc.setup",
+  "generatedOn": "[YYYY-MM-DD]",
+  "projectName": "[project name]",
+  "paths": {
+    "testingRoot": "Testing",
+    "requirements": "Testing/Requirements",
+    "manualTestCases": "Testing/Manual_Test/TestCases",
+    "automationRoot": "Testing/Automation",
+    "pages": "Testing/Automation/pages",
+    "tests": "Testing/Automation/tests",
+    "reports": "Testing/Automation/reports",
+    "screenshots": "Testing/Automation/screenshots",
+    "automationLogs": "Testing/Automation/automation-logs",
+    "learningFile": "Testing/project-learning.md",
+    "skillsDir": ".claude/skills"
+  },
+  "steering": {
+    "dir": ".specify/memory",
+    "readme": ".specify/memory/constitution.md",
+    "L1": ".specify/memory/constitution.md",
+    "L2": ".specify/memory/constitution.md",
+    "L3": ".specify/memory/constitution.md"
+  },
+  "framework": {
+    "runner": "[resolve selected primary runner]",
+    "configFile": "[resolve existing config or N/A]",
+    "browserProject": "[only for browser scope]",
+    "language": "[resolve selected runtime]"
+  },
+  "mcp": {
+    "configFile": ".mcp.json",
+    "servers": []
+  },
+  "deviations": [
+    {
+      "area": "quality-policy",
+      "decision": "The constitution QC article replaces standalone policy documents; legacy steering keys are compatibility aliases.",
+      "source": ".specify/memory/constitution.md"
+    },
+    {
+      "area": "reporting",
+      "decision": "Local reports only. Pass ado_mode: local to every automation invocation; skip external publishing and synchronization."
+    },
+    {
+      "area": "live-tc-validation",
+      "decision": "CLI skill 3c is selected only for browser validation; non-browser targets use approved runner/manual checks."
+    }
+  ],
+  "qc": {
+    "projectTypes": [],
+    "changeMode": "unresolved",
+    "browserValidation": "unresolved",
+    "targets": []
+  }
+}
