@@ -1,0 +1,5 @@
+{
+  "schemaVersion": 1,
+  "paths": { "testingRoot": "Testing", "automationRoot": "Testing/Automation", "tests": "Testing/Automation/tests", "pages": "Testing/Automation/pages" },
+  "automation": { "layers": ["pages", "tests", "helpers", "prerequest"], "consoleAllowList": [] }
+}

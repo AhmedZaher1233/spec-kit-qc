@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// sync-qc-skills.mjs — pull the Spec Kit qc preset's retained QC skills (and the /sync-skills command
+// sync-qc-skills.mjs — pull the Spec Kit QC kit's three skills (and the /sync-skills command
 // plus this script) from the canonical repo into the current project's .claude/ folder.
 //
 // Zero dependencies, Node >= 18 (global fetch). Prints ONE JSON payload on stdout.
@@ -24,7 +24,6 @@ export const SOURCE_REPO = 'AhmedZaher1233/spec-kit-qc';
 export const SOURCE_URL = `https://github.com/${SOURCE_REPO}`;
 export const DEFAULT_BRANCH = 'main';
 export const SKILLS = [
-  'link-qc-3c-validate-manual-test-cases-cli',
   'link-qc-5-test-run-automation',
   'link-qc-6-ui-testing',
   'link-qc-md-to-html',
@@ -268,6 +267,6 @@ async function main() {
   emit(out);
 }
 
-if (import.meta.url === `file:///${toPosix(process.argv[1]).replace(/^\//, '')}` || toPosix(process.argv[1] ?? '').endsWith('sync-qc-skills.mjs')) {
+if (toPosix(process.argv[1] ?? '').endsWith('sync-qc-skills.mjs')) {
   main().catch((e) => { process.stdout.write(JSON.stringify({ tool: 'sync-qc-skills', status: 'error', summary: String(e.message || e) }) + '\n'); process.exitCode = 1; });
 }

@@ -1,14 +1,14 @@
 ---
-description: Pull the Spec Kit qc preset's four QC skills (link-qc-3c-validate-manual-test-cases-cli, link-qc-5-test-run-automation, link-qc-6-ui-testing, link-qc-md-to-html) and this command from the canonical GitHub repo AhmedZaher1233/spec-kit-qc into the current project's .claude/, and — only with --tools — install playwright-cli + its browser for skill 3c and Pillow + numpy for link-qc-6-ui-testing (when Python exists). Use in ANY project. Args: [skill names…] [--dry-run] [--branch <name>] [--tools]. By default it DELETES our four skill folders and downloads them fresh — only after the user confirms; other skills and files are never deleted.
-argument-hint: "[link-qc-3c-validate-manual-test-cases-cli link-qc-5-test-run-automation link-qc-6-ui-testing link-qc-md-to-html] [--dry-run] [--branch main] [--tools]"
+description: Pull the Spec Kit QC kit's three skills (link-qc-5-test-run-automation, link-qc-md-to-html, optional link-qc-6-ui-testing) and this command from the canonical GitHub repo AhmedZaher1233/spec-kit-qc into the current project's .claude/, and — only with --tools — install Pillow + numpy for link-qc-6-ui-testing (when Python exists). Use in ANY project. Args: [skill names…] [--dry-run] [--branch <name>] [--tools]. By default it DELETES our three skill folders and downloads them fresh — only after the user confirms; other skills and files are never deleted.
+argument-hint: "[link-qc-5-test-run-automation link-qc-md-to-html link-qc-6-ui-testing] [--dry-run] [--branch main] [--tools]"
 allowed-tools: Bash(node *sync-qc-skills.mjs*), Bash(curl *), Bash(mkdir *), Read, Glob, Grep
 ---
 
 # /sync-skills — update the QC skills in this project from the preset repo
 
 Source of truth: `https://github.com/AhmedZaher1233/spec-kit-qc` (branch `main` unless `--branch` is
-given). It owns exactly four skill folders under `.claude/skills/` — the retained QC skills of the
-Spec Kit qc preset, already **trimmed** (policy lives in the constitution's Quality Control article,
+given). It owns exactly three skill folders under `.claude/skills/` — the QC skills of the
+Spec Kit QC kit (policy lives in the constitution's Quality Control section,
 the skills hold tool mechanics) — plus this command and the sync script. Nothing else in the project
 is ever touched: other skills, other commands, `.mcp.json`, `.gitignore` (except the one
 `.playwright-cli/` line with `--tools`), `Testing/`, `specs/`, `.specify/` and settings stay as they are.
@@ -19,11 +19,11 @@ command — they are updated through Spec Kit (`specify preset add --dev <path>`
 this command is a thin wrapper around it. Never re-implement the sync in prose.
 
 Arguments: `$ARGUMENTS`
-- No skill names → all four skills + this command + the script.
+- No skill names → all three skills + this command + the script.
 - Skill folder names → `--only <name>` for each.
 - `--dry-run` → run the script with `--check` (read-only; compares remote git blob SHAs with the local files, nothing downloaded).
 - `--branch <name>` → passed through.
-- `--tools` → also install the optional tools: playwright-cli (+ chromium browser + the `.playwright-cli/` gitignore line) for skill 3c, and Pillow + numpy for link-qc-6-ui-testing when a Python interpreter already exists. Without it nothing is installed.
+- `--tools` → also install the optional tools: Pillow + numpy for link-qc-6-ui-testing when a Python interpreter already exists (the Playwright browsers are installed by the automation project itself). Without it nothing is installed.
 
 Private repository: the script sends `GITHUB_TOKEN` / `GH_TOKEN` when set (a fine-grained token with
 *Contents: read* is enough). A `status: error` with "not found — the repo is private" means the token
