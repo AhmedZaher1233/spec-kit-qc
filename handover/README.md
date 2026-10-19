@@ -9,7 +9,7 @@ command, skill name or skill definition changes. Default Spec Kit v1.1.x behavio
 
 | # | File in this folder | Destination in your repo | Action | Purpose |
 |---|---|---|---|---|
-| 1 | `.specify/memory/constitution.QC-section.md` | `.specify/memory/constitution.md` | **insert section** | the QC rules (QC-0 … QC-18) and the QC configuration table; the default plan Constitution Check, `/speckit.analyze` and `/speckit.implement` enforce them |
+| 1 | `.specify/memory/constitution.QC-section.md` | `.specify/memory/constitution.md` | **insert section** | the QC rules (QC-1 … QC-18) and the QC configuration table; the default plan Constitution Check, `/speckit.analyze` and `/speckit.implement` enforce them |
 | 2 | `.specify/templates/plan-template.Testing-section.md` | `.specify/templates/plan-template.md` | **append section** | plan.md gets a `## Testing` section the default `/speckit.plan` fills (story risk, traceability, high-level test cases, test data, automation approach, testability asks, open questions) |
 | 3 | `.specify/templates/tasks-template.QC-rows.md` | `.specify/templates/tasks-template.md` | **insert three blocks** | tasks.md gets the test-case expansion (Foundational), the testability asks (per story) and the execution tasks (Polish) the default `/speckit.tasks` emits and `/speckit.implement` executes |
 | 4 | `.specify/templates/test-cases-template.md` | same path | **new file** | format of `specs/<NNN-feature>/TEST-CASES-<NNN-feature>.md` — the test cases plus a `## Test Data` section (environments `[E]`, accounts `[A]` by secret name, data `[D]`), read by the automation skill and the renderer |

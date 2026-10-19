@@ -37,7 +37,7 @@ Negative categories covered or N/A with reason: invalid input [TC / N/A], bounda
 
 **Automation approach** (QC-9, QC-11): [browser surface → Playwright automation with skill link-qc-5-test-run-automation for the Automation Candidate YES cases; API → repository runner `<command>`; manual-only → TC-IDs with reason]. Reuse / extend / create decision for the automation root: [existing project at `<path>` reused | new project under AUTOMATION_ROOT]. Coverage target and enforcement: [from the constitution configuration table].
 
-**Developer testability asks** (QC-0): [stable test ids on …; observable interface for … (job result, mail sandbox, download); isolated seed / cleanup hook for …; test accounts on the local build via secret names; LOCAL_RUN_COMMAND / health endpoint] — each becomes a task inside its user story.
+**Developer testability asks** (QC-3): [stable test ids on …; observable interface for … (job result, mail sandbox, download); isolated seed / cleanup hook for …; test accounts on the local build via secret names; LOCAL_RUN_COMMAND / health endpoint] — each becomes a task inside its user story.
 
 **Open questions**: [none | NEEDS CLARIFICATION: … (also listed under Technical Context → Testing)]
 

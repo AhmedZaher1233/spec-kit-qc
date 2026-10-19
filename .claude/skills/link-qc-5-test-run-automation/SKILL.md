@@ -205,7 +205,7 @@ Resolve:
 | `db_access` | `helper` (the automation project already has a DB helper/connection) → `env:{VAR}` (the QC names the env var holding a connection string — value never read into the chat, logged, or written) → **default `none`** (DB option not offered) | none |
 | `workers_parallel` | task input `--workers N` → learning file `[type: env]` line → **default 2** (passed per command as `--workers`; serial groups always `--workers 1`) | 2 |
 | `headed` | **true by default** (visible Google Chrome window); task input `--headless` or no display available → false (`PW_HEADLESS=1` on every command), reported as a Deviation | true |
-| `qa_standards` | **passed by the invoking command**: `.specify/memory/constitution.md` — its "Quality Control" article (QC-0 … QC-18 + the QC project configuration table) is the ONLY QC policy source (QC-1, QC-17). Any reference in this skill to steering documents (README / L1 / L2 / L3), standards files, a REQ file or a white-box report resolves to this article or to "not applicable" | `.specify/memory/constitution.md` |
+| `qa_standards` | **passed by the invoking command**: `.specify/memory/constitution.md` — its "Quality Control" article (QC-1 … QC-18 + the QC project configuration table) is the ONLY QC policy source (QC-1, QC-17). Any reference in this skill to steering documents (README / L1 / L2 / L3), standards files, a REQ file or a white-box report resolves to this article or to "not applicable" | `.specify/memory/constitution.md` |
 
 **Resolved paths are immutable for the run.** Once `tc_output_folder`, `spec_level`,
 `results_root`, `logs_root` or `screenshots_root` is resolved for a run, it is immutable for

@@ -6,7 +6,7 @@ guidance and ships two unchanged skills (plus one optional):
 
 | Piece | Destination in a project | What it does |
 |---|---|---|
-| `## Quality Control` section | `.specify/memory/constitution.md` | the QC rules (QC-0 … QC-18) and the QC configuration table; enforced by the default plan Constitution Check, `/speckit.analyze` and `/speckit.implement` |
+| `## Quality Control` section | `.specify/memory/constitution.md` | the QC rules (QC-1 … QC-18) and the QC configuration table; enforced by the default plan Constitution Check, `/speckit.analyze` and `/speckit.implement` |
 | `## Testing` section | `.specify/templates/plan-template.md` | the test design inside plan.md (story risk, traceability, high-level test cases, test data, automation approach, testability asks, open questions) |
 | Quality Control task rows | `.specify/templates/tasks-template.md` | test-case expansion in Foundational, testability asks per story, automation / manual execution / HTML in Polish |
 | `test-cases-template.md` | `.specify/templates/` | the format of `TEST-CASES-<feature>.md` (test cases + `## Test Data`) that the skills read |

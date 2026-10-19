@@ -3,29 +3,8 @@
 Testing is part of the default Spec Kit workflow: the plan carries the test design, the tasks
 carry the test work, `/speckit.implement` executes it. This section holds the durable QC rules
 the default commands enforce through the plan's Constitution Check, `/speckit.analyze` and the
-completion check of `/speckit.implement`. Rules are numbered QC-0 … QC-18 so plans, tasks and
+completion check of `/speckit.implement`. Rules are numbered QC-1 … QC-18 so plans, tasks and
 the QC skills can cite them. "MUST" marks a gate; everything else is the standard the work meets.
-
-### QC-0 Roles and responsibilities
-
-Named people fill these roles per feature; one person may hold several, except approving their
-own test design.
-
-| Role | Responsibility |
-|---|---|
-| QC Lead | owns the QC configuration values; approves `TEST-CASES-<feature>.md`; co-signs the release decision |
-| Test designer | derives coverage from the spec; writes the plan's `## Testing` section and expands the test cases |
-| Tester | executes manual cases and records only real observations |
-| Automation engineer | runs and maintains the automation produced from approved test cases |
-| Developer | delivers the testability asks, owns unit / component / integration tests, fixes defects, runs the application locally for the test run |
-| Product Owner / BA | decides business intent; answers business questions through `/speckit.clarify` |
-| Designer / UX | decides design intent; approves visual baselines |
-| Release owner | records the GO / NO-GO decision with the QC Lead |
-| Engineering Lead | owns these standards; approves policy exceptions |
-
-QC owns acceptance strategy, cross-system verification and release evidence; developer-owned
-test layers follow the project's own development principles. Valid existing suites are reused
-whoever wrote them; every test layer, data service and external dependency has one owner.
 
 ### QC-1 Authority and sources
 
