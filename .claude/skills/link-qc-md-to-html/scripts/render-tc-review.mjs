@@ -4,8 +4,9 @@
 // each under scripts/). Edit all three; selftest.mjs case 0 sha256-compares every mirrored file.
 //
 // render-tc-review.mjs — deterministic renderer for the human review page.
-//   TEST-CASES-{feature}.md (+ TEST-DATA-{feature}.md, + TC-REVIEW-STRINGS-{feature}.ar.json)
-//   (+ REVIEW-COMMENTS-{feature}.md, the reviewer's comments saved from the page)
+//   TEST-CASES-{feature}.md (its `## Test Data` section carries the environments / accounts / data
+//   items; a legacy separate TEST-DATA-{feature}.md is still read when the section is absent)
+//   (+ TC-REVIEW-STRINGS-{feature}.ar.json, + REVIEW-COMMENTS-{feature}.md, the reviewer's comments saved from the page)
 //   → TC-REVIEW-{feature}.html, from assets/tc-review.template.html (the body partial) inside
 //   assets/report-shell.template.html (the one general report page, shared with skill 5).
 //
@@ -22,7 +23,7 @@
 // reported in mismatches[] and the computed value is rendered.
 //
 // Usage:
-//   node render-tc-review.mjs --tc <TEST-CASES-{feature}.md> [--data <TEST-DATA-{feature}.md>]
+//   node render-tc-review.mjs --tc <TEST-CASES-{feature}.md> [--data <legacy TEST-DATA-{feature}.md>]
 //        [--out <path>] [--lang en|ar] [--strings <path>] [--comments <path>] [--write] [--write-skeleton]
 //        [--emit-keys] [--force] [--strict] [--pretty]
 // Exit: 0 always, unless --strict: PASS 0 · MISMATCH 1 · BLOCKED 2 · NOT_RUN 3.
@@ -69,8 +70,8 @@ export const ID_RE = /^[A-Z][A-Z0-9]*(?:-[A-Za-z0-9.]+)+$/;
 export const LIMITS = [
   'Text screen, not a judge: the renderer checks shape and vocabulary. It does not judge whether a step is testable or a coverage row is right.',
   'A password-shaped literal ("password: x", "token = y") in a step BLOCKs; a secret written any other way is not detected.',
-  'Configuration literals are matched against TEST-DATA only: an Environment row value or host, or an Accounts row username, found in a TC text (outside quotes) is a data-literal WARNING (never a block). A configuration value TEST-DATA does not list is not detected; a duplicated dataset is left to self-review; a typed test input or an exact expected output is never flagged; a line ending "(intentional input)" is skipped.',
-  'A [E{n}] / [A{n}] / [D{n}] token with no TEST-DATA row is a data-ref-unresolved WARNING; without a TEST-DATA file the tokens are not checked.',
+  'Configuration literals are matched against the `## Test Data` rows only: an Environment row value or host, or an Accounts row username, found in a TC text (outside quotes) is a data-literal WARNING (never a block). A configuration value the test data does not list is not detected; a duplicated dataset is left to self-review; a typed test input or an exact expected output is never flagged; a line ending "(intentional input)" is skipped.',
+  'A [E{n}] / [A{n}] / [D{n}] token with no `## Test Data` row is a data-ref-unresolved WARNING; without a `## Test Data` section (or legacy TEST-DATA file) the tokens are not checked.',
   'Narrative language is a per-TC script ratio (Arabic letters over Arabic + Latin letters, outside quoted strings) on an English page; quoted application labels never count. It reports narrative-not-english as a WARNING and cannot judge translation quality.',
   'A [HUMAN] step is counted and badged; whether the step really needs a person is the designer\'s call (tc-design.md), not the renderer\'s.',
   'Legacy documents (missing Scope / Generated / Stage / App validation progress / frozen anchors / Potential Bugs / evidence stamps) render with compatibility[] findings. Only a renamed or missing frozen field inside a TC blocks.',
@@ -231,7 +232,7 @@ const findSection = (secs, re) => secs.find((s) => re.test(s.title));
 function subsections(lines) {
   const out = []; let cur = null;
   for (let i = 0; i < lines.length; i++) {
-    const m = lines[i].match(/^##{1,2} +(.+?)s*$/);
+    const m = lines[i].match(/^##{1,2} +(.+?)\s*$/);
     if (m) { cur = { title: stripMd(m[1]), start: i, lines: [] }; out.push(cur); continue; }
     if (cur) cur.lines.push(lines[i]);
   }
@@ -403,13 +404,24 @@ export function parseTcDocument(text) {
     }
   } else compat('open-findings-missing', 'No `## Open Findings for the Human Reviewer` section — shown as empty.');
 
-  return { feature, header, headerOrder: order, summaryRows, tcBlocks, existing: existing ? existing.tables[0] : null, log: log ? log.tables[0] : null, traceTable, coverageTable, negative: negative ? negative.tables[0] : null, standards: standards ? standards.tables[0] : null, manual: manual ? manual.tables[0] : null, potentialBugs, openQuestions, findings, compatibility, warnings, errors, sectionTitles: secs.map((s) => s.title) };
+  // `## Test Data` — the environments / accounts / data items live inside the TC document (its `###` sub-headings are the anchors).
+  const testDataSec = findSection(secs, /^test data$/i) || null;
+
+  return { feature, header, headerOrder: order, summaryRows, tcBlocks, existing: existing ? existing.tables[0] : null, log: log ? log.tables[0] : null, traceTable, coverageTable, negative: negative ? negative.tables[0] : null, standards: standards ? standards.tables[0] : null, manual: manual ? manual.tables[0] : null, potentialBugs, openQuestions, findings, compatibility, warnings, errors, sectionTitles: secs.map((s) => s.title), testDataSec };
 }
 
+/** Legacy: a separate TEST-DATA-{feature}.md whose tables sit under `##` headings. */
 export function parseTestData(text) {
   const lines = text.split('\n');
   const { header } = parseHeaderBlock(lines);
-  const secs = sections(lines);
+  return parseTestDataSections(sections(lines), header);
+}
+/** The `## Test Data` section of the TC document: the same tables under `### 0. Environment` … `### 4. Problems`. */
+export function parseInlineTestData(sec) {
+  const secs = subsections(sec.lines).map((s) => ({ ...s, start: s.start + sec.start + 1 }));
+  return parseTestDataSections(secs, {});
+}
+function parseTestDataSections(secs, header) {
   const glance = findSection(secs, /at a glance/i);
   const problems = findSection(secs, /problems/i);
   const gt = glance ? parseTables(glance.lines, glance.start + 1)[0] : null;
@@ -429,19 +441,19 @@ export function parseTestData(text) {
     const ci = { num: col(pt, /^#$/), item: col(pt, /data item/i), problem: col(pt, /^problem$/i), why: col(pt, /^why$/i), decision: col(pt, /decide/i) };
     for (const r of pt.rows) problemRows.push({ num: stripMd(cell(r, ci.num)), item: stripMd(cell(r, ci.item)), problem: stripMd(cell(r, ci.problem)), why: stripMd(cell(r, ci.why)), decision: stripMd(cell(r, ci.decision)) });
   }
-  // `## 0. Environment` (E{n}) and `## 1. Accounts` (A{n}) — the configuration the TCs reference by token.
+  // `0. Environment` (E{n}) and `1. Accounts` (A{n}) — the configuration the TCs reference by token.
   const env = []; const accounts = []; const compatibility = [];
   const envSec = findSection(secs, /^0\.\s*environment/i);
   const et = envSec ? parseTables(envSec.lines, envSec.start + 1)[0] : null;
   if (et) {
     const ci = { id: col(et, /^id$/i), what: col(et, /^what$/i), value: col(et, /^value$/i), status: col(et, /^status$/i) };
     for (const r of et.rows) { const id = stripMd(cell(r, ci.id)).toUpperCase(); if (/^E\d+$/.test(id)) env.push({ id, what: stripMd(cell(r, ci.what)), value: bare(cell(r, ci.value)), status: stripMd(cell(r, ci.status)).toUpperCase() }); }
-  } else compatibility.push({ what: 'test-data-environment-missing', detail: 'TEST-DATA has no `## 0. Environment` table — [E{n}] references cannot be resolved and environment literals are not checked.' });
+  } else compatibility.push({ what: 'test-data-environment-missing', detail: 'the test data has no `0. Environment` table — [E{n}] references cannot be resolved and environment literals are not checked.' });
   const accSec = findSection(secs, /^1\.\s*accounts/i);
   const at = accSec ? parseTables(accSec.lines, accSec.start + 1)[0] : null;
   if (at) {
     const ci = { id: col(at, /^id$/i), role: col(at, /^role$/i), user: col(at, /^username$/i), status: col(at, /^status$/i), used: col(at, /used by/i), note: col(at, /^note$/i) };
-    if (ci.id < 0) compatibility.push({ what: 'test-data-accounts-no-id', detail: 'TEST-DATA `## 1. Accounts` has no `ID` column — [A{n}] references cannot be resolved (usernames are still checked).' });
+    if (ci.id < 0) compatibility.push({ what: 'test-data-accounts-no-id', detail: 'the test-data `1. Accounts` table has no `ID` column — [A{n}] references cannot be resolved (usernames are still checked).' });
     for (const r of at.rows) { const id = ci.id >= 0 ? stripMd(cell(r, ci.id)).toUpperCase() : ''; accounts.push({ id: /^A\d+$/.test(id) ? id : null, role: stripMd(cell(r, ci.role)), username: bare(cell(r, ci.user)), status: stripMd(cell(r, ci.status)).toUpperCase(), used: stripMd(cell(r, ci.used)), note: stripMd(cell(r, ci.note)) }); }
   }
   return { header, items, problemRows, env, accounts, errors, compatibility, present: !!gt };
@@ -550,8 +562,8 @@ export function buildModel(doc, data, opts = {}) {
     const oracle = bare(fv('Data Oracle')); const shared = bare(fv('Shared data') ?? (e.row ? e.row.shared : ''));
     const use = scanDataUse([...pre, ...steps, expected, oracle, shared], cfg);
     if (data) {
-      for (const l of use.literals) warnings.push({ kind: 'data-literal', id: e.id, detail: e.id + ' repeats ' + l.kind + ' value "' + l.value + '" (TEST-DATA ' + (l.id || 'row') + ') — reference it as [' + (l.id || '…') + '] or end the line with "(intentional input)"' });
-      for (const r of use.unresolved) warnings.push({ kind: 'data-ref-unresolved', id: e.id, detail: e.id + ' references [' + r + '] but TEST-DATA has no such row' });
+      for (const l of use.literals) warnings.push({ kind: 'data-literal', id: e.id, detail: e.id + ' repeats ' + l.kind + ' value "' + l.value + '" (test-data ' + (l.id || 'row') + ') — reference it as [' + (l.id || '…') + '] or end the line with "(intentional input)"' });
+      for (const r of use.unresolved) warnings.push({ kind: 'data-ref-unresolved', id: e.id, detail: e.id + ' references [' + r + '] but `## Test Data` has no such row' });
       dataRefs.total += use.refs.size; dataRefs.unresolved += use.unresolved.length; dataRefs.literals += use.literals.length; for (const r of use.refs) if (cfg.known.has(r)) dataRefs.resolved.add(r);
     }
     tcs.push({
@@ -635,7 +647,7 @@ export function buildModel(doc, data, opts = {}) {
   // ---- test data
   const td = data && data.present ? { items: data.items, problems: data.problemRows, ready: data.items.filter((i) => i.status === 'READY').length, missing: data.items.filter((i) => i.status === 'MISSING').length, impossible: data.items.filter((i) => i.status === 'IMPOSSIBLE').length, unknown: data.items.filter((i) => i.status === 'UNKNOWN').length, present: true } : { items: [], problems: [], present: false };
   if (data) { errors.push(...data.errors); compatibility.push(...(data.compatibility || [])); }
-  if (!data) compatibility.push({ what: 'test-data-missing', detail: 'No TEST-DATA file was supplied or found — the test-data tile renders `—`; [A/E/D] references and configuration literals are not checked.' });
+  if (!data) compatibility.push({ what: 'test-data-missing', detail: 'No `## Test Data` section in the document and no legacy TEST-DATA file — the test-data tile renders `—`; [A/E/D] references and configuration literals are not checked.' });
 
   // ---- header comparison
   const declared = (re) => { const v = hv(re); return v === null ? null : v; };
@@ -1005,7 +1017,7 @@ function viewModel(model, lang, strings, cm) {
     trace: model.trace.map((r, i) => ({ ac: t('trace.' + (i + 1) + '.ac', r.ac), req: r.req || DASH, tcs: r.tcs || DASH, status: r.status || DASH, missing: t('trace.' + (i + 1) + '.missing', r.missing || DASH), gap: r.gap })), has_trace: model.trace.length > 0,
     manual: model.manual.map((m, i) => ({ category: t('manual.' + (i + 1) + '.category', m.category), tc: m.tc, scenario: t('manual.' + (i + 1) + '.scenario', m.scenario), why: t('manual.' + (i + 1) + '.why', m.why), prio_class: 'prio-' + m.priority, priority: m.priorityText || DASH })),
     n_manual: num(c.manual.total), n_manual_high: num(c.manual.high), n_manual_medium: num(c.manual.medium), n_manual_low: num(c.manual.low),
-    has_data: model.testData.present, data_items: model.testData.items.map((d, i) => ({ num: d.num || String(i + 1), name: t('data.' + (d.num || i + 1) + '.name', d.name), look: t('data.' + (d.num || i + 1) + '.look', d.look), used: d.used || DASH, status: d.status || DASH, d_class: 'd-' + (d.status || 'unknown').toLowerCase(), way: t('data.' + (d.num || i + 1) + '.way', d.way || DASH) })),
+    has_data: model.testData.present, data_source: model.dataSource || 'TEST-CASES-' + model.feature + '.md ## Test Data', data_items: model.testData.items.map((d, i) => ({ num: d.num || String(i + 1), name: t('data.' + (d.num || i + 1) + '.name', d.name), look: t('data.' + (d.num || i + 1) + '.look', d.look), used: d.used || DASH, status: d.status || DASH, d_class: 'd-' + (d.status || 'unknown').toLowerCase(), way: t('data.' + (d.num || i + 1) + '.way', d.way || DASH) })),
     n_data: c.testData ? String(c.testData.items) : DASH, n_ready: c.testData ? String(c.testData.ready) : DASH, n_missing: c.testData ? String(c.testData.missing) : DASH, n_impossible: c.testData ? String(c.testData.impossible) : DASH, n_unknown: c.testData ? String(c.testData.unknown) : DASH,
     problems: model.testData.problems.map((p, i) => ({ num: p.num || String(i + 1), item: p.item, problem: t('problem.' + (p.num || i + 1) + '.problem', p.problem), why: t('problem.' + (p.num || i + 1) + '.why', p.why), decision: t('problem.' + (p.num || i + 1) + '.decision', p.decision) })),
     has_existing: !!model.existing, existing: model.existing ? model.existing.rows.map((r, i) => ({ original: r[0] || DASH, disposition: t('existing.' + (i + 1) + '.1', r[1] || DASH), reason: t('existing.' + (i + 1) + '.2', r[2] || DASH) })) : [],
@@ -1047,7 +1059,7 @@ function shellParts(vm, C) {
   if (vm.has_human) tiles.push({ value: vm.n_human_tcs, label_html: e(C.t_human) + ' (' + ltr(vm.n_human_steps) + ')', cls: 'human' });
   const footer = [
     e(C.footer_1) + ' ' + code('TEST-CASES-' + vm.feature + '.md') + ' ' + e(C.footer_1b),
-    e(C.footer_2) + ' ' + code('TEST-DATA-' + vm.feature + '.md') + ' ' + e(C.footer_2b),
+    e(C.footer_2) + ' ' + code(vm.data_source) + ' ' + e(C.footer_2b),
     e(C.footer_3) + ' ' + code('Status: APPROVED') + '. ' + e(C.footer_3b) + ' ' + code('link-qc-4-publish-test-cases-azure') + ' ' + e(C.footer_3c) + ' ' + code('link-qc-5-test-run-automation') + ' ' + e(C.footer_3d),
     e(C.footer_4) + ' ' + code('link-qc-3-generate-manual-test-cases --revision') + '. ' + e(C.footer_4b) + ' ' + code('link-qc-3b-validate-manual-test-cases') + ' ' + e(C.footer_4c),
   ].join('\n    ');
@@ -1101,11 +1113,15 @@ export function render({ tcPath, dataPath = null, stringsPath = null, commentsPa
   const doc = parseTcDocument(tcText);
   const feature = doc.feature || (path.basename(tcPath).match(/^TEST-CASES-(.+)\.md$/i) || [])[1] || path.basename(tcPath, '.md');
   const dir = path.dirname(tcPath);
-  const dp = dataPath || (isFile(path.join(dir, 'TEST-DATA-' + feature + '.md')) ? path.join(dir, 'TEST-DATA-' + feature + '.md') : null);
+  // Test data: the document's own `## Test Data` section; a legacy separate TEST-DATA file only when the section is absent.
+  const inlineData = !!doc.testDataSec;
+  const dp = inlineData ? null : dataPath || (isFile(path.join(dir, 'TEST-DATA-' + feature + '.md')) ? path.join(dir, 'TEST-DATA-' + feature + '.md') : null);
   const dataText = dp && isFile(dp) ? readText(dp) : null;
-  if (dataPath && !dataText) warnings.push({ kind: 'data-file-missing', detail: 'TEST-DATA file not found: ' + dataPath });
-  const data = dataText ? parseTestData(dataText) : null;
+  if (!inlineData && dataPath && !dataText) warnings.push({ kind: 'data-file-missing', detail: 'TEST-DATA file not found: ' + dataPath });
+  if (inlineData && dataPath) warnings.push({ kind: 'data-file-ignored', detail: 'the document carries its own `## Test Data` section — --data ' + dataPath + ' was ignored' });
+  const data = inlineData ? parseInlineTestData(doc.testDataSec) : dataText ? parseTestData(dataText) : null;
   const model = buildModel(doc, data, { feature });
+  model.dataSource = inlineData ? 'TEST-CASES-' + feature + '.md ## Test Data' : dp ? path.basename(dp) : 'TEST-CASES-' + feature + '.md ## Test Data';
   // Language: the flag decides; the document's `Review page language:` line is a record of an earlier render, never an input.
   const reviewLangHeader = model.reviewLang || null;
   const headerSays = reviewLangHeader ? (/arabic|عرب/i.test(reviewLangHeader) ? 'ar' : /english/i.test(reviewLangHeader) ? 'en' : null) : null;
@@ -1146,7 +1162,7 @@ export function render({ tcPath, dataPath = null, stringsPath = null, commentsPa
   else { gate = 'PASS'; gateReason = model.counts.total + ' TC(s), header consistent' + (lang === 'ar' ? ', Arabic complete' : ''); }
   if (gate === 'BLOCKED') html = null;
 
-  const hashes = { source: sha256(tcText), data: dataText ? sha256(dataText) : 'none', strings: stringsText ? sha256(stringsText) : 'none', comments: commentsText ? sha256(commentsText) : 'none', lang };
+  const hashes = { source: sha256(tcText), data: inlineData ? 'inline' : dataText ? sha256(dataText) : 'none', strings: stringsText ? sha256(stringsText) : 'none', comments: commentsText ? sha256(commentsText) : 'none', lang };
   if (html) html = stampProvenance(html, hashes);
   const payload = base({
     root, gate, gateReason,

@@ -1,6 +1,6 @@
 ---
 name: link-qc-md-to-html
-description: "Render any QC Markdown document of a Spec Kit feature to an HTML page, each file independently, with the renderer that owns its format: TEST-CASES-{feature}.md → TC-REVIEW-{feature}.html (skill 3/3c review page), TEST-RUN-REPORT-{feature}.md + BUG-REPORT-{feature}.md → TEST-RUN-REPORT-{feature}.html (skill 5 run report), and every other QC Markdown file (test-plan.md, TEST-DATA-{feature}.md, a bug report on its own, notes) → {file}.html in the same report shell. Deterministic, zero dependencies, never hand-written HTML. Trigger on: 'render the test plan', 'convert to HTML', 'make the review page', 'md to html', 'HTML report for specs/NNN-feature', '/link-qc-md-to-html <file or folder>'."
+description: "Render any QC Markdown document of a Spec Kit feature to an HTML page, each file independently, with the renderer that owns its format: TEST-CASES-{feature}.md → TC-REVIEW-{feature}.html (skill 3/3c review page), TEST-RUN-REPORT-{feature}.md + BUG-REPORT-{feature}.md → TEST-RUN-REPORT-{feature}.html (skill 5 run report), and every other QC Markdown file (test-plan.md, a bug report on its own, notes) → {file}.html in the same report shell. Deterministic, zero dependencies, never hand-written HTML. Trigger on: 'render the test plan', 'convert to HTML', 'make the review page', 'md to html', 'HTML report for specs/NNN-feature', '/link-qc-md-to-html <file or folder>'."
 allowed-tools: Read, Glob, Bash(node *convert.mjs*), Bash(node *render-tc-review.mjs*), Bash(node *render-run-report.mjs*), Bash(node *render-markdown.mjs*)
 argument-hint: "<file.md | feature folder> [more…] [--lang en|ar] [--dry-run] [--force] [--only tc|run|md]"
 ---
@@ -15,10 +15,10 @@ a deterministic script that recomputes its figures from the document's own table
 
 | Input (by file name) | Renderer | Output beside the input |
 |---|---|---|
-| `TEST-CASES-{feature}.md` (+ `TEST-DATA-{feature}.md`, `TC-REVIEW-STRINGS-{feature}.ar.json`, `REVIEW-COMMENTS-{feature}.md` when present) | `scripts/render-tc-review.mjs` — byte-identical mirror of the renderer in `link-qc-3c-validate-manual-test-cases-cli` | `TC-REVIEW-{feature}.html` |
+| `TEST-CASES-{feature}.md` — its `## Test Data` section included (+ `TC-REVIEW-STRINGS-{feature}.ar.json`, `REVIEW-COMMENTS-{feature}.md` when present; a legacy separate `TEST-DATA-{feature}.md` is read only when the section is absent) | `scripts/render-tc-review.mjs` — byte-identical mirror of the renderer in `link-qc-3c-validate-manual-test-cases-cli` | `TC-REVIEW-{feature}.html` |
 | `TEST-RUN-REPORT-{feature}.md` (+ `BUG-REPORT-{feature}.md`, `.runs/phase-N.json`, `REVIEW-COMMENTS-{feature}.md`) | `scripts/render-run-report.mjs` — mirror of the renderer in `link-qc-5-test-run-automation` | `TEST-RUN-REPORT-{feature}.html` |
 | `BUG-REPORT-{feature}.md` with its run report beside it | the run-report renderer (one combined page: Test Results + Bugs) | same page as above |
-| `test-plan.md`, `TEST-DATA-{feature}.md`, a lone `BUG-REPORT-*.md`, any other `.md` | `scripts/render-markdown.mjs` — generic Markdown → the same report shell (header lines become meta items, the Status / Environment / Bugs line becomes the banner, `##` headings a table of contents) | `{file}.html` |
+| `test-plan.md`, a lone `BUG-REPORT-*.md`, any other `.md` (a legacy `TEST-DATA-{feature}.md` included) | `scripts/render-markdown.mjs` — generic Markdown → the same report shell (header lines become meta items, the Status / Environment / Bugs line becomes the banner, `##` headings a table of contents) | `{file}.html` |
 
 All three use `assets/report-shell.template.html`, the one general report page (theme toggle,
 reviewer-comment boxes that save `REVIEW-COMMENTS-{page}.md`, screenshot viewer, RTL-ready CSS).
@@ -51,7 +51,7 @@ Skipped on purpose: `REVIEW-COMMENTS-*.md`, `TC-REVIEW-STRINGS-*.ar.json`, `TC-G
 
    Clear warnings before delivery when they are about the source: `data-literal` (a URL / username
    repeated in a TC step — reference `[E{n}]` / `[A{n}]`), `data-ref-unresolved` (a token without a
-   TEST-DATA row), `narrative-not-english`, `placeholders` (template tokens such as `{YYYY-MM-DD}` or
+   `## Test Data` row), `narrative-not-english`, `placeholders` (template tokens such as `{YYYY-MM-DD}` or
    `[PENDING]` still in a plan — fine for a draft, say so).
 4. **Arabic pages.** `--lang ar` renders the shell in Arabic (RTL). A TC page additionally needs
    `TC-REVIEW-STRINGS-{feature}.ar.json`; derive it with `node scripts/render-tc-review.mjs --tc <file>
@@ -70,4 +70,4 @@ Skipped on purpose: `REVIEW-COMMENTS-*.md`, `TC-REVIEW-STRINGS-*.ar.json`, `TC-G
 - No secret is ever rendered: a password-shaped literal in the source blocks the page.
 - Policy lives in the constitution's Quality Control article (QC-13: HTML comes only from these
   renderers). Formats of the documents are defined by the preset templates (`test-plan-template`,
-  `test-cases-template`, `test-data-template`) and by skill 5's run-report reference.
+  `test-cases-template` — its `## Test Data` section replaced the former `test-data-template`) and by skill 5's run-report reference.

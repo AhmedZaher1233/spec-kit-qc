@@ -88,7 +88,7 @@ You do NOT:
 - start without `Status: APPROVED` in the TC document (QC-9)
 - guess selectors — every selector is confirmed in source
 - **open a browser to re-verify what is already confirmed in source or a page object**
-- **modify the approved source documents** (`TEST-CASES-{feature}.md`, `TEST-DATA-{feature}.md`)
+- **modify the approved source document** (`TEST-CASES-{feature}.md`, its `## Test Data` section included)
 - weaken a test, mask an application bug, or edit product code, settings or configuration to
   obtain a pass — the self-healing limits are QC-9; safe `data-testid` additions are the one
   permitted product-code touch
@@ -581,7 +581,7 @@ Internal step (no JSON handoff files) — normalize each approved TC:
   PHASE 2.6 `<data_readiness>`; a TC with none is `read-only, no data need`.
 - **Reference tokens resolve per ID, never by shortcut.** A TC names its configuration as
   `Open the portal [E1]`, `Login as Administrator [A1]`, `price list "Sample" [D1]`
-  (`TEST-DATA-{feature}.md` §0 / §1 / §2). `[E{n}]` maps to **its own** environment entry keyed by
+  (`## Test Data` §0 / §1 / §2 of `TEST-CASES-{feature}.md`). `[E{n}]` maps to **its own** environment entry keyed by
   the E-ID (E1 is not "the" URL — E2 may be the mail sandbox); `[A{n}]` maps to **that** account
   keyed by the A-ID, credentials looked up by account ID and never by role (a role may own several
   accounts); `[D{n}]` maps to that data item. In code this is `environment('E1')`, `account('A1')`,
@@ -783,7 +783,7 @@ policy it imports is `assets/timeouts.template.ts` → `{automation_root}/timeou
    lines of `references/code-craft.md` §12. `helpers/test-data.ts` carries the per-ID maps of
    `<normalization>` — `environments` keyed by E-ID and `accounts` keyed by A-ID, each entry
    reading `{ID}_URL` / `{ID}_USER` / `{ID}_PASSWORD` at run time with no default — fill one entry
-   per row the story's TEST-DATA file has; an existing env layer keyed by role is extended with the
+   per row the story's `## Test Data` section has; an existing env layer keyed by role is extended with the
    ID-keyed entries, never replaced. Everything touched goes in the Placement Manifest.
 7. **Version gate.** Resolve `playwright_version` (`<project_profile>`); < 1.42 → BLOCKED with
    the upgrade command; otherwise record the feature gates (tags object, `--last-failed`, native
@@ -1341,27 +1341,28 @@ as plain-English `[type: env]` / `[type: trick]` lines under `### Automation Mod
 precondition cannot be met or its data is absent from the environment is **decided here by the
 QC — never discovered by the run** (constitution QC-7).
 
-**1. Collect the requirements** — start from the feature's
-`{tc_output_folder}/TEST-DATA-{feature}.md` (expanded at /speckit.tasks) when it exists: take its environment rows (`## 0.
-Environment`, `E{n}`), data items (`D{n}`), TC mapping, accounts (`## 1. Accounts`, `A{n}`),
+**1. Collect the requirements** — start from the `## Test Data` section of the approved
+`TEST-CASES-{feature}.md` (expanded at /speckit.tasks; a legacy separate `{tc_output_folder}/TEST-DATA-{feature}.md` is read the
+same way only when the section is absent): take its environment rows (`### 0.
+Environment`, `E{n}`), data items (`D{n}`), TC mapping, accounts (`### 1. Accounts`, `A{n}`),
 statuses (`READY` / `MISSING` / `IMPOSSIBLE` / `UNKNOWN`), Problems table and recommended ways as
 the inventory of record — **do not rebuild the inventory from scratch**. Every ID a TC references
 is a requirement of its own: `[E2]` is the mail sandbox row, not the base URL; `[A2]` is that
 account, not "an Administrator"; a referenced ID with no row is a gap to list here, never a
 substitution.
-Add only requirements the approved TC document carries that the file lacks (a Preconditions /
+Add only requirements the test cases carry that the section lacks (a Preconditions /
 Data Oracle / Shared data sentence or a role with no data item), and say which were added.
-The test-data expansion (/speckit.tasks) owns that file — never edit it; record outcomes in the learning file and
-`{run_file}.data_readiness` only. When the file is missing, derive the requirements from
+The test-data expansion (/speckit.tasks) owns that section — never edit it; record outcomes in the learning file and
+`{run_file}.data_readiness` only. When the section is missing, derive the requirements from
 `<normalization>` as before (one per Preconditions / Data Oracle / Shared data sentence and per
 role used), de-duplicated across TCs, each with the list of TC-IDs that depend on it. Either
 way, reuse the PHASE 2.5 flags (`dataGated`, `alwaysSkipped`) as hints for which requirements
 the generated code already doubts — do not re-derive them.
 
 **2. Probe the environment — cheap, once per distinct requirement, never per TC.** Items the
-test-data file marks `READY` are re-confirmed from the learning file only; probe the `MISSING`
-/ `UNKNOWN` items (and `IMPOSSIBLE` ones only to look for a way the file did not know). A way
-the file marks "to be confirmed" (`api` / `db`) is offered to the QC only after step 4 finds
+`## Test Data` section marks `READY` are re-confirmed from the learning file only; probe the `MISSING`
+/ `UNKNOWN` items (and `IMPOSSIBLE` ones only to look for a way the section did not know). A way
+the section marks "to be confirmed" (`api` / `db`) is offered to the QC only after step 4 finds
 it:
 1. `Testing/project-learning.md` first: `[type: data]` lines (`## Test Data`), `[type: env]`
    lines, and this skill's Q&A. A recorded fixture or a recorded decision is reused — say so.
@@ -2466,7 +2467,7 @@ Before returning AUTOMATION COMPLETE:
       row per screen (`reuse` / `extend` / `create`) naming every candidate with its reason; the
       validator ran with `--inventory` at both checkpoints with no open `pom-duplicate-page`; no
       `create` row left a candidate unaddressed; each decision recorded in `## Automation Tricks`**
-- [ ] **Every TEST-DATA reference resolved per ID — `[E{n}]` its own environment entry, `[A{n}]`
+- [ ] **Every `## Test Data` reference resolved per ID — `[E{n}]` its own environment entry, `[A{n}]`
       that account by ID (never by role), `[D{n}]` that data item — through `helpers/test-data.ts`
       env vars named after the ID; no literal URL / username, no default value**
 - [ ] **`[HUMAN]` steps: the candidate TC generated up to the first one, coverage

@@ -12,13 +12,12 @@ command, skill name or skill definition changes. Default Spec Kit v1.1.x behavio
 | 1 | `.specify/memory/constitution.QC-section.md` | `.specify/memory/constitution.md` | **insert section** | the QC rules (QC-0 … QC-18) and the QC configuration table; the default plan Constitution Check, `/speckit.analyze` and `/speckit.implement` enforce them |
 | 2 | `.specify/templates/plan-template.Testing-section.md` | `.specify/templates/plan-template.md` | **append section** | plan.md gets a `## Testing` section the default `/speckit.plan` fills (story risk, traceability, high-level test cases, test data, automation approach, testability asks, open questions) |
 | 3 | `.specify/templates/tasks-template.QC-rows.md` | `.specify/templates/tasks-template.md` | **insert three blocks** | tasks.md gets the test-case expansion (Foundational), the testability asks (per story) and the execution tasks (Polish) the default `/speckit.tasks` emits and `/speckit.implement` executes |
-| 4 | `.specify/templates/test-cases-template.md` | same path | **new file** | format of `specs/<NNN-feature>/TEST-CASES-<NNN-feature>.md`, read by the automation skill and the renderer |
-| 5 | `.specify/templates/test-data-template.md` | same path | **new file** | format of `specs/<NNN-feature>/TEST-DATA-<NNN-feature>.md` (environments `[E]`, accounts `[A]` by secret name, data `[D]`) |
-| 6 | `.claude/skills/link-qc-5-test-run-automation/` | same path | **copy folder** (unchanged) | Playwright automation from approved test cases: run report, bug report, coverage CSVs, HTML |
-| 7 | `.claude/skills/link-qc-md-to-html/` | same path | **copy folder** (unchanged) | renders every QC Markdown file to HTML (test cases review page, run report, any other file) |
-| 8 | `.claude/skills/link-qc-6-ui-testing/` | same path | **copy folder** (optional, unchanged) | visual audit of implemented screens through the Playwright MCP |
-| 9 | `Testing/qa-manifest.json` | same path | **new file, only if #8 is used** | the one file skill 6 requires; skill 5 does not need it |
-| 10 | `CLAUDE.md.QC-block.md` | `CLAUDE.md` (repo root) | **append block** (optional, recommended) | four lines that keep the agent oriented; skill 5 reads `./CLAUDE.md` before generating code |
+| 4 | `.specify/templates/test-cases-template.md` | same path | **new file** | format of `specs/<NNN-feature>/TEST-CASES-<NNN-feature>.md` — the test cases plus a `## Test Data` section (environments `[E]`, accounts `[A]` by secret name, data `[D]`), read by the automation skill and the renderer |
+| 5 | `.claude/skills/link-qc-5-test-run-automation/` | same path | **copy folder** (unchanged) | Playwright automation from approved test cases: run report, bug report, coverage CSVs, HTML |
+| 6 | `.claude/skills/link-qc-md-to-html/` | same path | **copy folder** (unchanged) | renders every QC Markdown file to HTML (test cases review page, run report, any other file) |
+| 7 | `.claude/skills/link-qc-6-ui-testing/` | same path | **copy folder** (optional, unchanged) | visual audit of implemented screens through the Playwright MCP |
+| 8 | `Testing/qa-manifest.json` | same path | **new file, only if #7 is used** | the one file skill 6 requires; skill 5 does not need it |
+| 9 | `CLAUDE.md.QC-block.md` | `CLAUDE.md` (repo root) | **append block** (optional, recommended) | four lines that keep the agent oriented; skill 5 reads `./CLAUDE.md` before generating code |
 
 ### Placement instructions (existing files)
 
@@ -63,7 +62,7 @@ and three blocks, each introduced by an HTML comment that names its place:
 | QC Lead, optional | `/speckit.checklist testing — quality of the plan.md Testing section`, ticks the items (unchecked items make `/speckit.implement` ask before proceeding) | `checklists/testing.md` |
 | `/speckit.tasks` | emits the three QC blocks with real IDs; constitution QC-3 makes them mandatory, so the "tests are optional" rule does not drop them | tasks.md |
 | `/speckit.analyze` | flags a missing `## Testing` section, open testing questions or missing QC tasks as constitution violations (CRITICAL) | report |
-| `/speckit.implement` — Foundational | writes `TEST-CASES-<f>.md` (`**Status:** PENDING QC REVIEW`) and `TEST-DATA-<f>.md` from the templates; renders the review page | `specs/<f>/TEST-CASES-<f>.md`, `TEST-DATA-<f>.md`, `TC-REVIEW-<f>.html` |
+| `/speckit.implement` — Foundational | writes `TEST-CASES-<f>.md` (`**Status:** PENDING QC REVIEW`; test cases + `## Test Data`) from the template; renders the review page | `specs/<f>/TEST-CASES-<f>.md`, `TC-REVIEW-<f>.html` |
 | **QC Lead** | reviews the page, edits the first header line to `**Status:** APPROVED — <name>, <date>` | approved test cases |
 | `/speckit.implement` — stories | developer testability asks delivered with the story code | product code |
 | `/speckit.implement` — Polish | app started locally; skill 5 runs the automation (it refuses until the document is APPROVED — the task halts, approve, re-run `/speckit.implement`, it resumes); Severity 1–2 / P1–P2 bugs fixed and re-run as a new phase; manual-only cases executed and recorded; HTML rendered | `<AUTOMATION_ROOT>/reports/<f>/TEST-RUN-REPORT-<f>.md`, `BUG-REPORT-<f>.md`, `.html`, `coverage/*.csv`; `## Execution Results` in TEST-CASES |
@@ -76,7 +75,7 @@ and three blocks, each introduced by an HTML comment that names its place:
 | Requirements review (six quality dimensions, story risk) | `/speckit.clarify` + `/speckit.checklist`; story risk in plan `## Testing`; QC-5 | none in content; the checklist is a default command |
 | Test plan: risk, traceability, high-level test cases, test data, automation approach, open questions | plan.md `## Testing`; unknowns through research.md | one artifact instead of two; no owner / profile block (removed on request) |
 | Single formal review | QC Lead sets `**Status:** APPROVED` on the test-case file after reviewing the rendered page; optional `checklists/testing.md` for the design | approval is a human edit of one line, enforced by the automation skill's own gate |
-| Detailed test cases + test data (frozen format, header counts, summary, traceability, negative coverage, standards alignment, coverage score, manual-only scenarios, potential bugs, open findings) | Foundational task executed by `/speckit.implement` with the two templates | identical structure minus validator-owned fields (`Validation`, `MCP validation`, `App validation progress`, evidence stamps); new `## Execution Results` table |
+| Detailed test cases + test data (frozen format, header counts, summary, traceability, negative coverage, standards alignment, coverage score, manual-only scenarios, potential bugs, open findings) | Foundational task executed by `/speckit.implement` with the test-cases template (the test data is its `## Test Data` section) | identical structure minus validator-owned fields (`Validation`, `MCP validation`, `App validation progress`, evidence stamps); new `## Execution Results` table |
 | Live validation of test cases against the running app (skill 3c) | **not reproduced** | wrong, missing or unnecessary steps are corrected when the automation run or manual execution meets the application (QC-8 → `## Enhancement Log` row). No live label capture, validation states or evidence stamps before the run; first automation runs may raise more open questions |
 | Automation, compliance validator, run report, bug report (Severity + Priority), coverage CSVs, HTML | skill 5 unchanged, invoked by a Polish task with the configuration-table values | none |
 | Manual execution results | `## Execution Results` table in TEST-CASES | previously in test-plan.md |
@@ -119,7 +118,7 @@ questions on every fresh clone.
 ## 6. Verified before handover
 
 - Filled sample from the templates: review-page renderer gate PASS for both `PENDING QC REVIEW`
-  and `APPROVED`, TEST-DATA renders, `tc-hash.mjs` counts exactly the test cases (the results
+  and `APPROVED`, the `## Test Data` section renders and resolves the `[E]/[A]/[D]` tokens, `tc-hash.mjs` counts exactly the test cases (the results
   table adds none).
 - Skill 5 self-tests: validator 18/18, run report 27/27, watchdog 10/10, config inventory 7/7,
-  tc-hash 14/14. The skills are byte-identical to the kit's copies.
+  tc-hash 15/15. The skills are byte-identical to the kit's copies.

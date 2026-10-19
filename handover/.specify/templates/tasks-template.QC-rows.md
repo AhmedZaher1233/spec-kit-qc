@@ -9,8 +9,7 @@
 
 <!-- (1) Add to "## Phase 2: Foundational (Blocking Prerequisites)", after the last foundational task -->
 
-- [ ] TXXX Expand plan.md `## Testing` into specs/[###-feature]/TEST-CASES-[###-feature].md using .specify/templates/test-cases-template.md: one test case per high-level row (same TC-ID, Type, Locale, Smoke, Automation Candidate, Data effect, Shared data), steps per constitution QC-6, header `**Status:** PENDING QC REVIEW`
-- [ ] TXXX Write specs/[###-feature]/TEST-DATA-[###-feature].md using .specify/templates/test-data-template.md: every [E]/[A]/[D] token used by the test cases resolves to one row; accounts by secret name only (QC-7)
+- [ ] TXXX Expand plan.md `## Testing` into specs/[###-feature]/TEST-CASES-[###-feature].md using .specify/templates/test-cases-template.md: one test case per high-level row (same TC-ID, Type, Locale, Smoke, Automation Candidate, Data effect, Shared data), steps per constitution QC-6, header `**Status:** PENDING QC REVIEW`; its `## Test Data` section from the plan's Test data table: every [E]/[A]/[D] token used by the test cases resolves to one row; accounts by secret name only (QC-7)
 - [ ] TXXX Render the review page with skill link-qc-md-to-html (`/link-qc-md-to-html specs/[###-feature]`) and hand it to the QC Lead; the QC Lead sets `**Status:** APPROVED — <name>, <date>` in TEST-CASES-[###-feature].md after review (QC-3) — nobody else sets it
 
 <!-- (2) Add to each "### Implementation for User Story N" block (one row per ask the plan lists for that story) -->

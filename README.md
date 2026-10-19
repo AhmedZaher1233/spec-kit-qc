@@ -9,7 +9,7 @@ guidance and ships two unchanged skills (plus one optional):
 | `## Quality Control` section | `.specify/memory/constitution.md` | the QC rules (QC-0 … QC-18) and the QC configuration table; enforced by the default plan Constitution Check, `/speckit.analyze` and `/speckit.implement` |
 | `## Testing` section | `.specify/templates/plan-template.md` | the test design inside plan.md (story risk, traceability, high-level test cases, test data, automation approach, testability asks, open questions) |
 | Quality Control task rows | `.specify/templates/tasks-template.md` | test-case expansion in Foundational, testability asks per story, automation / manual execution / HTML in Polish |
-| `test-cases-template.md`, `test-data-template.md` | `.specify/templates/` | the format of `TEST-CASES-<feature>.md` / `TEST-DATA-<feature>.md` that the skills read |
+| `test-cases-template.md` | `.specify/templates/` | the format of `TEST-CASES-<feature>.md` (test cases + `## Test Data`) that the skills read |
 | `link-qc-5-test-run-automation`, `link-qc-md-to-html`, optional `link-qc-6-ui-testing` | `.claude/skills/` | Playwright automation with run report, bug report and coverage; HTML rendering; optional visual audit — used as-is |
 
 **Everything the development team needs is in [`handover/`](handover/README.md)**: real files at
@@ -26,7 +26,7 @@ team prefers the preset mechanism.
 /speckit.checklist      requirement quality checklists                    (QC-5)
 /speckit.plan           plan.md ## Testing; testing unknowns → research.md (QC-3)
    QC Lead (optional)   /speckit.checklist testing — reviews the ## Testing section
-/speckit.tasks          Foundational: expand TEST-CASES / TEST-DATA · per story: testability asks ·
+/speckit.tasks          Foundational: expand TEST-CASES (incl. ## Test Data) · per story: testability asks ·
                         Polish: automation (skill 5), manual cases, HTML
 /speckit.analyze        constitution alignment, coverage spec ↔ plan ↔ tasks
 /speckit.implement      writes TEST-CASES-<f>.md (Status PENDING QC REVIEW) → QC Lead sets APPROVED →
@@ -35,7 +35,7 @@ team prefers the preset mechanism.
 /speckit.converge       spec ↔ code gaps afterwards
 ```
 
-Feature artifacts: `specs/<NNN-feature>/TEST-CASES-<NNN-feature>.md`, `TEST-DATA-<NNN-feature>.md`,
+Feature artifacts: `specs/<NNN-feature>/TEST-CASES-<NNN-feature>.md` (test cases + `## Test Data`),
 `TC-REVIEW-<NNN-feature>.html`. Automation outputs (skill 5): `<AUTOMATION_ROOT>/reports/<NNN-feature>/`
 `TEST-RUN-REPORT-<NNN-feature>.md`, `BUG-REPORT-<NNN-feature>.md`, `.html`, `coverage/*.csv`.
 

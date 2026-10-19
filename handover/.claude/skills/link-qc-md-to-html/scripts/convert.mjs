@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 // convert.mjs — one entry point: any QC Markdown file (or a folder of them) → HTML page(s), each file
 // independently, with the renderer that owns its format:
-//   TEST-CASES-{feature}.md      → render-tc-review.mjs   (+ TEST-DATA, Arabic sidecar, review comments)
+//   TEST-CASES-{feature}.md      → render-tc-review.mjs   (incl. its ## Test Data; + Arabic sidecar, review comments)
 //                                   → TC-REVIEW-{feature}.html            [mirror of skills 3 / 3b / 3c]
 //   TEST-RUN-REPORT-{feature}.md → render-run-report.mjs  (+ BUG-REPORT, .runs/, review comments)
 //                                   → TEST-RUN-REPORT-{feature}.html      [mirror of skill 5]
 //   BUG-REPORT-{feature}.md      → the run-report page when its TEST-RUN-REPORT sits beside it, else generic
-//   everything else (.md)        → render-markdown.mjs → {file}.html      [test-plan.md, TEST-DATA, notes]
+//   everything else (.md)        → render-markdown.mjs → {file}.html      [test-plan.md, notes, a legacy TEST-DATA]
 //
 // Node >= 18, ESM, zero dependencies. Unlike the renderers it wraps, convert WRITES by default
 // (that is what a conversion command is for); --dry-run parses and reports only. The markdown is

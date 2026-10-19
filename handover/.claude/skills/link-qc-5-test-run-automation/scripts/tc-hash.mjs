@@ -17,14 +17,15 @@
 // to one space, list numbering is dropped (the parser already yields item text), tokens such as
 // [HUMAN], [A1], [E2], [D3] are kept.
 //
-// Fingerprint of referenced data (from TEST-DATA-{feature}.md): [A{n}] → the account's role and
+// Fingerprint of referenced data (from the document's `## Test Data` section, or a legacy separate
+// TEST-DATA-{feature}.md when the section is absent): [A{n}] → the account's role and
 // note; [D{n}] → the item's plain name and "Must look like"; [E{n}] → the row's "What" (the kind
 // of service). Usernames, passwords (never in the file), environment URL values, statuses,
 // "Where I checked" and dates are EXCLUDED — changing them is routine and never invalidates an
 // automation match. A referenced ID with no row is fingerprinted as "?" so the gap is visible.
 //
 // Zero dependencies, read-only, Node >= 18. CLI:
-//   node tc-hash.mjs --tc <TEST-CASES-*.md> [--data <TEST-DATA-*.md>] [--ids a,b] [--canonical] --pretty
+//   node tc-hash.mjs --tc <TEST-CASES-*.md> [--data <legacy TEST-DATA-*.md>] [--ids a,b] [--canonical] --pretty
 // Always exits 0; the result is the JSON payload.
 
 import fs from 'node:fs';
@@ -103,22 +104,26 @@ function section(lines, re) {
   const start = lines.findIndex((l) => re.test(l));
   if (start < 0) return [];
   let end = start + 1;
-  while (end < lines.length && !/^##\s/.test(lines[end])) end++;
+  while (end < lines.length && !/^##{1,2}\s/.test(lines[end])) end++;
   return lines.slice(start + 1, end);
 }
-/** { env: {E1:{what,value,status}}, accounts: {A1:{role,username,status,note}}, items: {D1:{name,mustLookLike,status}} } */
+/** True when the TC document carries its own `## Test Data` section. */
+export const hasInlineTestData = (tcText) => /^##\s+Test Data\s*$/mi.test((tcText || '').replace(/\r\n?/g, '\n'));
+/** { env: {E1:{what,value,status}}, accounts: {A1:{role,username,status,note}}, items: {D1:{name,mustLookLike,status}} }
+ *  Reads the tables under `### 0. Environment` … `### 2. Test data at a glance` of a TC document's `## Test Data`
+ *  section, or under the `##` headings of a legacy separate TEST-DATA file. */
 export function parseTestData(text) {
   const lines = (text || '').replace(/\r\n?/g, '\n').split('\n');
   const env = {}; const accounts = {}; const items = {};
-  for (const r of tableRows(section(lines, /^##\s*0\.\s*Environment/i))) {
+  for (const r of tableRows(section(lines, /^##{1,2}\s*0\.\s*Environment/i))) {
     const id = (r.id || '').toUpperCase(); if (!/^E\d+$/.test(id)) continue;
     env[id] = { what: r.what || '', value: r.value || '', status: r.status || '' };
   }
-  for (const r of tableRows(section(lines, /^##\s*1\.\s*Accounts/i))) {
+  for (const r of tableRows(section(lines, /^##{1,2}\s*1\.\s*Accounts/i))) {
     const id = (r.id || '').toUpperCase(); if (!/^A\d+$/.test(id)) continue;
     accounts[id] = { role: r.role || '', username: r.username || '', status: r.status || '', note: r.note || '' };
   }
-  for (const r of tableRows(section(lines, /^##\s*2\.\s*Test data at a glance/i))) {
+  for (const r of tableRows(section(lines, /^##{1,2}\s*2\.\s*Test data at a glance/i))) {
     const id = (r['#'] || r.id || '').toUpperCase(); if (!/^D\d+$/.test(id)) continue;
     items[id] = { name: r['data item (plain name)'] || r['data item'] || '', mustLookLike: r['must look like'] || '', status: r.status || '', usedBy: r['used by tcs'] || '' };
   }
@@ -185,7 +190,7 @@ export function tcHash(tc, data) { return sha256(canonicalTc(tc, data)); }
 
 /** Hash every TC of a document (optionally a subset of ids). */
 export function hashDocument(tcText, dataText, ids) {
-  const data = parseTestData(dataText || '');
+  const data = parseTestData(hasInlineTestData(tcText) ? tcText : dataText || '');
   const want = ids && ids.length ? new Set(ids) : null;
   const out = {};
   for (const tc of parseTcDocument(tcText)) if (!want || want.has(tc.id)) out[tc.id] = { hash: tcHash(tc, data), canonical: canonicalTc(tc, data) };
@@ -200,12 +205,13 @@ if (isMain) {
   if (!args.tc || typeof args.tc !== 'string') { print({ gate: 'NOT_RUN', reason: '--tc <TEST-CASES-*.md> is required', version: HASH_VERSION }, pretty); process.exit(0); }
   if (!fs.existsSync(args.tc)) { print({ gate: 'NOT_RUN', reason: 'file not found: ' + args.tc, version: HASH_VERSION }, pretty); process.exit(0); }
   const tcText = fs.readFileSync(args.tc, 'utf8');
-  let dataPath = typeof args.data === 'string' ? args.data : null;
-  if (!dataPath) { const guess = path.join(path.dirname(args.tc), path.basename(args.tc).replace(/^TEST-CASES-/, 'TEST-DATA-')); if (fs.existsSync(guess)) dataPath = guess; }
+  const inline = hasInlineTestData(tcText);
+  let dataPath = !inline && typeof args.data === 'string' ? args.data : null;
+  if (!inline && !dataPath) { const guess = path.join(path.dirname(args.tc), path.basename(args.tc).replace(/^TEST-CASES-/, 'TEST-DATA-')); if (fs.existsSync(guess)) dataPath = guess; }
   const dataText = dataPath && fs.existsSync(dataPath) ? fs.readFileSync(dataPath, 'utf8') : '';
   const ids = typeof args.ids === 'string' ? args.ids.split(',').map((s) => s.trim()).filter(Boolean) : null;
   const all = hashDocument(tcText, dataText, ids);
-  const payload = { gate: 'PASS', version: HASH_VERSION, tc: args.tc, data: dataPath || null, count: Object.keys(all).length, hashes: {} };
+  const payload = { gate: 'PASS', version: HASH_VERSION, tc: args.tc, data: inline ? 'inline' : dataPath || null, count: Object.keys(all).length, hashes: {} };
   for (const [id, v] of Object.entries(all)) payload.hashes[id] = args.canonical ? v : v.hash;
   print(payload, pretty);
 }

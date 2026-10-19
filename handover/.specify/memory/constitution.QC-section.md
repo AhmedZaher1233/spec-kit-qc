@@ -39,7 +39,8 @@ whoever wrote them; every test layer, data service and external dependency has o
 - Unknowns are resolved from evidence first, then asked once with a recommended answer; nothing
   proceeds on an unanswered recommendation.
 - Feature test artifacts live beside the spec in `specs/<NNN-feature>/`
-  (`TEST-CASES-<NNN-feature>.md`, `TEST-DATA-<NNN-feature>.md`, rendered `.html`). Automation
+  (`TEST-CASES-<NNN-feature>.md`, whose `## Test Data` section carries the environments, accounts
+  and data items, and the rendered `.html`). Automation
   code and run outputs live under the automation root of the configuration table. QC assets are
   never deleted or duplicated; approved artifacts are preserved.
 - `Testing/project-learning.md` is created and maintained by the automation skill for its own
@@ -172,7 +173,7 @@ debt, never as new PASSes; a configuration-only change still gets a smoke check.
   absent is a MISSING data item and is not run; a run never invents data to make a case pass.
 - No password, token or secret in any file, chat, log or command line. Accounts are referenced
   by secret name (`A1_USER` / `A1_PASSWORD`, `E1_URL`) or logged in attended; usernames live only
-  in the test-data file, never in a step.
+  in the `## Test Data` section of the test-case file, never in a step.
 
 ### QC-8 Test-case corrections during implementation
 
@@ -391,7 +392,7 @@ expected result. Scope changes go through the spec.
 | QC Lead (optional) | `/speckit.checklist testing` on the `## Testing` section | `checklists/testing.md` |
 | `/speckit.tasks` | expansion task (Foundational), testability asks (per story), execution tasks (Polish) | tasks.md |
 | `/speckit.analyze` | constitution alignment, coverage spec ↔ plan ↔ tasks | report |
-| `/speckit.implement` | writes TEST-CASES / TEST-DATA (PENDING QC REVIEW) · **QC Lead sets APPROVED** · runs the application locally · automation (skill 5) · manual cases · fixes defects · renders HTML | TEST-CASES, TEST-DATA, run report, bug report, `.html` |
+| `/speckit.implement` | writes TEST-CASES incl. its `## Test Data` section (PENDING QC REVIEW) · **QC Lead sets APPROVED** · runs the application locally · automation (skill 5) · manual cases · fixes defects · renders HTML | TEST-CASES, run report, bug report, `.html` |
 | `/speckit.converge` | spec ↔ code gaps after implementation | tasks.md convergence phase |
 
 ### QC project configuration
@@ -403,7 +404,7 @@ and blocks only dependent work. "Team default" applies unless changed here.
 |---|---|---|
 | Profile | DOMAIN_CONTEXT · surfaces · technology profile · change modes · release scope | [ ] |
 | Owners | QC Lead · release owner · Engineering Lead · data / environment / triage owners | [ ] |
-| Paths | feature test files: `specs/<NNN-feature>/TEST-CASES-<NNN-feature>.md`, `TEST-DATA-<NNN-feature>.md` · templates: `.specify/templates/test-cases-template.md`, `test-data-template.md` | fixed |
+| Paths | feature test file: `specs/<NNN-feature>/TEST-CASES-<NNN-feature>.md` (test cases + `## Test Data`) · template: `.specify/templates/test-cases-template.md` | fixed |
 | Paths | AUTOMATION_ROOT (Playwright project; reports, screenshots and logs are created under it by the automation skill) · skills directory | `Testing/Automation` · `.claude/skills` (team default) |
 | Environments | local = developer build used for the test run · ci · staging = pre-release incl. performance and security · production = smoke only; parity differences | [ ] |
 | Execution | runners per surface · environment IDs · build identifiers · secret names (`E{n}_URL`, `A{n}_USER` / `A{n}_PASSWORD`) · LOCAL_RUN_COMMAND | [ ] |
